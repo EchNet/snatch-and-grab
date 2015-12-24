@@ -1,6 +1,13 @@
 // en_wikipedia_article.js
 
-module.exports = {
-  test: function() { console.log("test"); }
-};
+function recognize(body) {
+  return false;
+}
 
+function process(process, callback) {
+}
+
+module.exports = {
+  recognize: recognize,
+  process: process
+};

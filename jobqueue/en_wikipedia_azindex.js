@@ -1,5 +1,13 @@
 // en_wikipedia_azindex.js
 
+function recognize(body) {
+  return false;
+}
+
+function process(process, callback) {
+}
+
 module.exports = {
-  test: function() { console.log("test"); }
+  recognize: recognize,
+  process: process
 };

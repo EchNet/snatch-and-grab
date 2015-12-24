@@ -1,43 +1,18 @@
 /* job-queue.js */
 
 var kue = require("kue");
-var fs = require("fs");
-var args = require("yargs").argv;
+var yargs = require("yargs");
+var request = require("request");
 var extend = require("extend");
+var configs = require("./config.js");
 
-var config = {
-  type: "en",
-  site: {
-    host: "https://en.wikipedia.org",
-    origin: "/wiki/Portal:Contents/A–Z_index"
-  },
-  worker: {
-    concurrency: 1,
-    path: [
-      "en_wikipedia_azindex",
-      "en_wikipedia_allpages",
-      "en_wikipedia_article"
-    ]
-  },
-  queue: {
-    prefix: "q",
-    redis: {
-      host: "localhost",
-      port: 6379,
-      db: 1
-    }
-  }
-};
-
-function readConfig(configFileName) {
-  return JSON.parse(fs.readFileSync(configFileName, "utf8"));
-}
-
-if (args.config) {
-  console.log("using config file", args.config);
-  extend(true, config, readConfig(args.config));
-}
-console.log("config", config);
+var args = yargs.argv;
+var config = (function() {
+  var configSelector = args.config || "default";
+  console.log("using", configSelector, "config");
+  return configs[configSelector];
+})();
+console.log(config);
 
 var queue = kue.createQueue({
   prefix: config.queue.prefix,
@@ -53,12 +28,49 @@ for (var ix = 0; ix < config.worker.path.length; ++ix) {
   workerPath.push(require("./" + config.worker.path[ix] + ".js"));
 }
 
+var workerCallback = {
+  enqueue: function(uri) {
+    console.log("enqueue", uri);
+  }
+};
+
+function process(body) {
+  for (var ix = 0; ix < workerPath.length; ++ix) {
+    var workerModule = workerPath[ix];
+    if (workerModule.recognize(body)) {
+      workerModule.process(body, workerCallback)
+      return 1;
+    }
+  }
+  return 0;
+}
+
 function work(job) {
   var uri = job.data.uri;
-  console.log(uri);
-  //for (var ix = 0; ix < workerPath.length; ++ix) {
-    //if (module.recognize(
-  //}
+  var url = config.site.host + uri;
+  console.log("Requesting", url);
+  request({
+    url: url,
+    followRedirect: false
+  }, function(error, response, body) {
+    if (error) {
+      console.log("error", error);
+    }
+    else if (response.statusCode != 200) {
+      console.log("response code", response.statusCode);
+    }
+    else {
+      var contentType = response.headers["content-type"];
+      if (response.headers["content-type"] == "text/html; charset=UTF-8") {
+        if (!process(body)) {
+          console.log("unrecognized content");
+        }
+      }
+      else {
+        console.log("bad content type", contentType);
+      }
+    }
+  });
 }
 
 queue.process(config.type, config.worker.concurrency, function(job, done) {

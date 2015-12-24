@@ -20,6 +20,7 @@ var queue = kue.createQueue({
 });
 
 function enqueue(uri) {
+  console.log("enqueue", uri);
   queue.create(config.type, { uri: uri }).save();
 }
 
@@ -29,9 +30,7 @@ for (var ix = 0; ix < config.worker.path.length; ++ix) {
 }
 
 var workerCallback = {
-  enqueue: function(uri) {
-    console.log("enqueue", uri);
-  }
+  enqueue: enqueue
 };
 
 function process(body) {

@@ -4,13 +4,12 @@ var en_wikipedia = {
   type: "en",
   site: {
     host: "https://en.wikipedia.org",
-    origin: "/wiki/Portal:Contents/A%E2%80%93Z_index"
+    origin: "/wiki/Special:AllPages"
   },
   worker: {
     concurrency: 1,
     path: [
       "en_wikipedia_article",
-      "en_wikipedia_azindex",
       "en_wikipedia_allpages"
     ]
   },

@@ -1,18 +1,19 @@
 // en_wikipedia_allpages.js
 
 function recognize(body) {
-  return body.indexOf("Portal_Contents_A–Z_index") > 0;
+  return body.indexOf("en.wikipedia.org/wiki/Special:AllPages") > 0;
+}
+
+function enqueueAll(body, regex, callback) {
+  var match;
+  while (match = regex.exec(body)) {
+    callback.enqueue(match[1]);
+  }
 }
 
 function process(body, callback) {
-  var regex = /<a href="(.wiki.Special:AllPages.[a-zA-Z0-9][a-zA-Z0-9]?)" /g;
-  for (;;) {
-    var match = regex.exec(body);
-    if (!match) {
-      break;
-    }
-    callback.enqueue(match[1]);
-  }
+  enqueueAll(body, /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g, callback);
+  enqueueAll(body, /<a href="(.w.index.php?title=Special:AllPages&amp;from=[^"])" /g, callback);
 }
 
 module.exports = {

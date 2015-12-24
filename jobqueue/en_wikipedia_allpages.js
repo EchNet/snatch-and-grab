@@ -1,7 +1,7 @@
 // en_wikipedia_allpages.js
 
 function recognize(body) {
-  return body.indexOf("en.wikipedia.org/wiki/Special:AllPages") > 0;
+  return body.indexOf(" ns-special mw-special-Allpages ") > 0;
 }
 
 function enqueueAll(body, regex, callback) {

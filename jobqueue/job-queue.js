@@ -29,45 +29,50 @@ for (var ix = 0; ix < config.worker.path.length; ++ix) {
   workerPath.push(require("./" + config.worker.path[ix] + ".js"));
 }
 
-var workerCallback = {
-  enqueue: enqueue
-};
-
 function process(body) {
+  var digest = {};
   for (var ix = 0; ix < workerPath.length; ++ix) {
     var workerModule = workerPath[ix];
     if (workerModule.recognize(body)) {
-      workerModule.process(body, workerCallback)
-      return 1;
+      workerModule.process(body, {
+        enqueue: enqueue,
+        scrape: function(content) {
+          digest = extend(true, digest, content);
+        }
+      });
     }
   }
-  return 0;
+  return digest;
 }
 
-function work(job) {
+function work(job, done) {
   var uri = job.data.uri;
   var url = config.site.host + uri;
   console.log("Requesting", url);
   request({
     url: url,
-    followRedirect: false
+    followRedirect: false,
+    followRedirects: false,
+    followAllRedirects: false
   }, function(error, response, body) {
     if (error) {
-      console.log("error", error);
+      done(error);
     }
     else if (response.statusCode != 200) {
       console.log("response code", response.statusCode);
+      done();
     }
     else {
       var contentType = response.headers["content-type"];
-      if (response.headers["content-type"] == "text/html; charset=UTF-8") {
-        if (!process(body)) {
-          console.log("unrecognized content");
-        }
+      if (response.headers["content-type"] != "text/html; charset=UTF-8") {
+        console.log("bad content type", contentType);
+        console.log(response);
       }
       else {
-        console.log("bad content type", contentType);
+        var digest = process(body);
+        console.log(digest);
       }
+      done();
     }
   });
 }
@@ -75,8 +80,7 @@ function work(job) {
 queue.process(config.type, config.worker.concurrency, function(job, done) {
   console.log(job.data);
   try {
-    work(job);
-    done();
+    work(job, done);
   }
   catch (e) {
     done(e);

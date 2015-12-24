@@ -7,7 +7,7 @@ var en_wikipedia = {
     origin: "/wiki/Special:AllPages"
   },
   worker: {
-    concurrency: 1,
+    concurrency: 30,
     path: [
       "en_wikipedia_article",
       "en_wikipedia_allpages"

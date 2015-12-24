@@ -1,5 +1,12 @@
-# snatch-and-grab
+# snatch-and-grab #
+
 Crawl a Web site.  Take what we want, discard the rest.  Build a search index.
+
+## Install Base Software ##
+
+NodeJS and NPM
+
+Redis  http://redis.io/download    tested using version 2.6   latest is 3.0
 
 Build
 

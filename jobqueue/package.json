@@ -1,0 +1,13 @@
+{
+  "name": "jobqueue",
+  "author": {
+    "name": "James Echmalian"
+  },
+  "version": "0.1.0",
+  "dependencies": {
+    "kue": "~0.6.2",
+    "yargs": "*",
+    "extend": "*"
+  },
+  "devDependencies": {}
+}

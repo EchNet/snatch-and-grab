@@ -1,5 +1,8 @@
 Job Queue:
-  Jobs are just URLs.  The Job Queue rejects duplicate URLs.
+  Jobs are just URLs. 
+
+Database:
+  A mongo collection, indexed by URI.
 
 Worker:
   [startup]
@@ -12,14 +15,13 @@ Worker:
   Canonicalize the URL(?)
 
   [fetch]
-  Look up the document record for the URL.
-  If there is a document record:
+  Look up the DB record for the URL.
+  If there is a DB record:
     If document record was written by a different version of worker, remove it.
 	Else If document has been checked within the freshness period, leave.
 	Else:
 	  Fetch the headers from the URL.
-	  If server is unreachable:
-		requeue the URL
+	  (If server is unreachable, it will come around again)
 		send a message (can cause the control
 		exit
 	  Update last accessed time on document record.

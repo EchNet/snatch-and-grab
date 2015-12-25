@@ -45,35 +45,61 @@ function process(body) {
   return digest;
 }
 
+var keepHeaders = { "last-modified": 1 };
+
+function filterHeaders(headers) {
+  var filtered = {};
+  for (var key in headers) {
+    if (keepHeaders[key]) {
+      filtered[key] = headers[key];
+    }
+  }
+  return filtered;
+}
+
+function handleResponse(response, body, record) {
+  try {
+    record.status = response.statusCode;
+    record.headers = filterHeaders(response.headers);
+    switch (response.statusCode) {
+    case 200:
+      var contentType = response.headers["content-type"];
+      if (response.headers["content-type"] == "text/html; charset=UTF-8") {
+        record.digest = process(body);
+      }
+      break;
+    case 301:
+      record.location = response.headers.location;
+      break;
+    }
+  }
+  catch (e) {
+    record.error = error = e;
+  }
+}
+
 function work(job, done) {
   var uri = job.data.uri;
   var url = config.site.host + uri;
   console.log("Requesting", url);
   request({
     url: url,
-    followRedirect: false,
-    followRedirects: false,
-    followAllRedirects: false
+    timeout: 15000,
+    followRedirect: false
   }, function(error, response, body) {
+    var record = {
+      uri: uri,
+      updateTime: new Date().getTime().toString(16)
+    };
     if (error) {
-      done(error);
-    }
-    else if (response.statusCode != 200) {
-      console.log("response code", response.statusCode);
-      done();
+      record.error = error;
     }
     else {
-      var contentType = response.headers["content-type"];
-      if (response.headers["content-type"] != "text/html; charset=UTF-8") {
-        console.log("bad content type", contentType);
-        console.log(response);
-      }
-      else {
-        var digest = process(body);
-        console.log(digest);
-      }
-      done();
+      handleResponse(response, body, record);
     }
+    // TODO: update the database.
+    console.log(record);
+    done(record.error);
   });
 }
 

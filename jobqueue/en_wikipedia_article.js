@@ -19,16 +19,16 @@ function parseLatLongPlain(latLong) {
 function process(body, callback) {
   var match;
   if (match = /<span class="latitude">([0-9][^<]*)</.exec(body)) {
-    callback.scrape({ geo: { latitude: parseLatLongDegrees(match[1]) } });
+    callback.scrape({ geo0: { latitude: parseLatLongDegrees(match[1]) } });
   }
   if (match = /<span class="longitude">([0-9][^<]*)</.exec(body)) {
-    callback.scrape({ geo: { longitude: parseLatLongDegrees(match[1]) } });
+    callback.scrape({ geo1: { longitude: parseLatLongDegrees(match[1]) } });
   }
   if (match = /<span class="geo-dec"[^>]*>([0-9][^<])</.exec(body)) {
-    callback.scrape({ geo: parseLatLongDec(match[1]) });
+    callback.scrape({ geo2: parseLatLongDec(match[1]) });
   }
   if (match = /<span class="geo"[^>]*>([0-9][^<])</.exec(body)) {
-    callback.scrape({ geo: parseLatLongPlain(match[1]) });
+    callback.scrape({ geo3: parseLatLongPlain(match[1]) });
   }
 }
 

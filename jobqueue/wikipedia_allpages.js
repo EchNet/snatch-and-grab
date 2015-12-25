@@ -7,17 +7,18 @@ function recognize(body) {
 function enqueueAll(body, regex, callback) {
   var match;
   while (match = regex.exec(body)) {
-    callback.enqueue(match[1]);
+    callback.enqueue(match[1].replace(/\&amp\;/g, "&"));
   }
 }
 
 function process(body, callback) {
-  enqueueAll(body, /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g, callback);
-  enqueueAll(body, /<a href="(.w.index.php?title=Special:AllPages&amp;from=[^"])" /g, callback);
+  console.log("here we are");
+  enqueueAll(body, /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" /g, callback);
+  //enqueueAll(body, /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g, callback);
 }
 
 module.exports = {
-  version: "0.1.0",
+  version: "wikipedia allpages 0.1",
   recognize: recognize,
   process: process
 };

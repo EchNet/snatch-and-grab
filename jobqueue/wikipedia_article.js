@@ -33,6 +33,7 @@ function process(body, callback) {
 }
 
 module.exports = {
+  version: "wikipedia article 0.1",
   recognize: recognize,
   process: process
 };

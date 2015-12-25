@@ -8,13 +8,22 @@ var en_wikipedia = {
   },
   worker: {
     concurrency: 30,
+    timeout: 15000,
+    freshnessTime: 82400000,
     path: [
-      "en_wikipedia_article",
-      "en_wikipedia_allpages"
+      "wikipedia_article",
+      "wikipedia_allpages"
     ]
   },
   queue: {
     prefix: "q",
+    redis: {
+      host: "localhost",
+      port: 6379,
+      db: 2
+    }
+  },
+  database: {
     redis: {
       host: "localhost",
       port: 6379,

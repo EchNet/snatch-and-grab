@@ -7,7 +7,7 @@ var request = require("request");
 var extend = require("extend");
 var configs = require("./config.js");
 
-var scraperVersion = "scraper 0.1.1.4";
+var scraperVersion = "scraper 0.1.1.10";
 
 var args = yargs.argv;
 var config = (function() {
@@ -111,6 +111,7 @@ function work(job, done) {
       if (dbRecord.scraperVersion == scraperVersion) {
         if (new Date().getTime() - lastUpdatedAt < config.worker.freshnessTime) {
           console.log(uri, "is still fresh");
+          done();
           return;
         }
       }

@@ -1,0 +1,17 @@
+{
+  "name": "crawler",
+  "author": {
+    "name": "James Echmalian"
+  },
+  "version": "0.1.0",
+  "dependencies": {
+    "kue": "~0.10.4",
+    "redis": "*",
+    "mongodb": "*",
+    "xmldom": "*",
+    "yargs": "*",
+    "extend": "*",
+    "request": "*"
+  },
+  "devDependencies": {}
+}

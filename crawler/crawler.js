@@ -9,7 +9,6 @@ var request = require("request");
 var extend = require("extend");
 var configs = require("./config.js");
 var mongo = require("mongodb");
-var xmldom = require("xmldom");
 
 function initConfig(app, proceed) {
   console.log("init config...");
@@ -19,15 +18,14 @@ function initConfig(app, proceed) {
   var config = configs[configSelector];
   console.log(config);
   app.config = config;
-  proceed(app);
+  proceed();
 }
 
 function initQueue(app, proceed) {
   console.log("init queue...");
-  var config = app.config;
-  var queue = kue.createQueue(config.queue);
-  var queueType = config.type;
-  var concurrency = config.worker.concurrency;
+  var queue = kue.createQueue(app.config.queue);
+  var queueType = app.config.type;
+  var concurrency = app.config.worker.concurrency;
 
   queue.on("job complete", function(id) {
     kue.Job.get(id, function(err, job) {
@@ -40,16 +38,16 @@ function initQueue(app, proceed) {
   });
 
   app.queue = {
-    enqueue: function(uri) {
+    enqueue: function(uri, callback) {
       console.log("enqueue", uri);
-      queue.create(queueType, { uri: uri }).save();
+      queue.create(queueType, { uri: uri }).save(callback);
     },
     process: function(worker) {
       queue.process(queueType, concurrency, worker);
     }
   };
 
-  proceed(app);
+  proceed();
 }
 
 function initChecklist(app, proceed) {
@@ -73,7 +71,7 @@ function initChecklist(app, proceed) {
         });
       }
     };
-    proceed(app);
+    proceed();
   });
 }
 
@@ -90,15 +88,18 @@ function initCollection(app, proceed) {
       var collection = db.collection(conf.collection);
 
       app.collection = {
-        wipe: function(callback) {
-          collection.deleteMany().done(callback);
-        },
         add: function(record, callback) {
           collection.insertOne(record, null, callback);
         },
       };
 
-      proceed(app);
+      // Optionally start fresh
+      if (app.args.clean) {
+          collection.deleteMany().done(proceed);
+      }
+      else {
+        proceed();
+      }
     }
   });
 }
@@ -106,86 +107,82 @@ function initCollection(app, proceed) {
 function initWorker(app, proceed) {
   console.log("init worker...");
 
-  var DOMParser = xmldom.DOMParser;
-  var domParser = new DOMParser({
-    errorHandler: { warning: function(){}, error: function(){}, fatalError: function(){} }
-  });
+  var host = app.config.site.host;
+  var timeout = app.config.worker.timeout;
+  var recognize = app.config.site.recognize;
+  var forEachLink = app.config.site.forEachLink;
 
-  function forEachDescendant(dom, nodeName, callback) {
-    if (dom.nodeName == nodeName) {
-      callback(dom);
+  function doRequest(uri, callback) {
+    var url = host + uri;
+    request({
+      url: url,
+      timeout: timeout,
+      followRedirect: false
+    }, callback);
+  }
+
+  function handleValidResponse(uri, text, updateTasks) {
+    if (recognize(text)) {
+      console.log("recognized", uri);
+      updateTasks.push(function(proceed) {
+        app.collection.add({
+          uri: uri,
+          created_at: new Date(),
+          crawlerVersion: crawlerVersion
+        }, proceed);
+      });
     }
-    else {
-      for (var child = dom.firstChild; child != null; child = child.nextSibling) {
-        if (child.nodeType == 1) {
-          forEachDescendant(child, nodeName, callback);
-        }
-      }
-    }
+    forEachLink(text, function(hrefUri) {
+      updateTasks.push(function(proceed) {
+        app.queue.enqueue(hrefUri, proceed);
+      });
+    });
+  }
+
+  function whenTasksComplete(tasks, proceed) {
+    (function go() {
+      (tasks.shift() || proceed)(go);
+    })();
   }
 
   app.worker = function(job, done) {
     var uri = job.data.uri;
-    var host = app.config.site.host;
-    var timeout = app.config.worker.timeout;
-    var followLink = app.config.site.followLink;
-    var cleanUri = app.config.site.cleanUri;
-    var recognize = app.config.site.recognize;
+    var updateTasks = [];
     app.checklist.check(uri, function() {
-      var url = host + uri;
-      console.log("Requesting", url);
-      request({
-        url: url,
-        timeout: timeout,
-        followRedirect: false
-      }, function(error, response, text) {
+      doRequest(uri, function(error, response, text) {
         if (error) {
-          console.log("network error", url, error);
+          console.log("request error", uri, error);
         }
-        else if (response.statusCode == 200 &&
-                response.headers["content-type"] == "text/html; charset=UTF-8") {
-          var dom = domParser.parseFromString(text);
-          if (dom) {
-            forEachDescendant(dom.documentElement, "a", function(ele) {
-              if (followLink(ele)) {
-                app.queue.enqueue(cleanUri(ele.getAttribute("href")));
-              }
-            });
-            if (recognize(dom)) {
-              var record = {};
-              app.collection.add({
-                uri: uri,
-                crawlerVersion: crawlerVersion
-              }, done);
-              return;
-            }
+        else if (response.statusCode != 200) {
+          console.log("bad HTTP status code", uri, response.statusCode);
+        }
+        else if (response.headers["content-type"] != "text/html; charset=UTF-8") {
+          console.log("bad content type", uri, response.headers["content-type"]);
+        }
+        else {
+          console.log("content received", uri);
+          handleValidResponse(uri, text, updateTasks);
+          if (updateTasks.length == 0) {
+            console.log("warning: apparent dead end", uri);
           }
         }
-        done();
+        whenTasksComplete(updateTasks, done);
       });
     });
   };
 
-  proceed(app);
+  proceed();
+}
+
+// Start crawling somewhere.
+function primeApp(app, proceed) {
+  console.log("prime app");
+  app.queue.enqueue(app.args.start || app.config.site.origin, proceed);
 }
 
 function startApp(app) {
   console.log("start app");
-
-  function process() {
-    app.queue.process(app.worker);
-  }
-
-  // Start somewhere.
-  app.queue.enqueue(app.args.start || app.config.site.origin);
-
-  // Optionally wipe out the former collection.
-  if (app.args.clean) {
-    app.collection.wipe(process);
-  }
-  else {
-    process();
-  }
+  app.queue.process(app.worker);
 }
 
 (function(args) {
@@ -194,6 +191,7 @@ function startApp(app) {
     scrapeId: "xxxxx",
     abort: function(msg, error) {
       console.log(msg, error);
+      console.log("Exiting...");
       process.exit(1);
     }
   };
@@ -204,6 +202,7 @@ function startApp(app) {
     initChecklist,
     initCollection,
     initWorker,
+    primeApp,
     startApp
   ];
 

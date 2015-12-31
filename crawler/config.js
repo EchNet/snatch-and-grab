@@ -1,5 +1,9 @@
 // config.js
 
+function looksLikeIndexPage(text) {
+  return text.indexOf(" ns-special mw-special-Allpages ") > 0;
+}
+
 function findOne(text, regex, callback) {
   var match;
   if (match = regex.exec(text)) {
@@ -20,18 +24,19 @@ var en_wikipedia = {
     host: "https://en.wikipedia.org",
     origin: "/wiki/Special:AllPages",
     forEachLink: function(text, callback) {
-      if (text.indexOf(" ns-special mw-special-Allpages ") > 0) {
+      if (looksLikeIndexPage(text)) {
         findOne(text, /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" title="Special\:AllPages">Next /g, callback);
-        findAll(text, /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g, callback);
       }
     },
-    recognize: function(text) {
-      return text.indexOf(" ns-subject page") > 0;
+    forEachLeaf: function(text, callback) {
+      if (looksLikeIndexPage(text)) {
+        findAll(text, /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g, callback);
+      }
     },
     versionHeaders: { "last-modified": 1 }
   },
   worker: {
-    concurrency: 30,
+    concurrency: 5,
     timeout: 15000,
     freshnessTime: 1000 * 60 * 60 * 24 * 4
   },
@@ -40,7 +45,7 @@ var en_wikipedia = {
     redis: {
       host: "localhost",
       port: 6379,
-      db: 2
+      db: 1
     }
   },
   checklist: {

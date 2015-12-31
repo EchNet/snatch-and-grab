@@ -10,6 +10,19 @@ var extend = require("extend");
 var configs = require("./config.js");
 var mongo = require("mongodb");
 
+function executeSequence(sequence, done) {
+  (function go() {
+    while (sequence.length) {
+      var f = sequence.shift();
+      if (f) {
+        f(go);
+        return;
+      }
+    }
+    done && done();
+  })();
+}
+
 function initConfig(app, proceed) {
   console.log("init config...");
   var args = app.args;
@@ -30,6 +43,15 @@ function initQueue(app, proceed) {
   queue.on("job complete", function(id) {
     kue.Job.get(id, function(err, job) {
       job.remove();
+    });
+    queue.activeCount(function(err, count) {
+      if (count === 0) {
+        queue.inactiveCount(function(err, count) {
+          if (count === 0) {
+            app.exit();
+          }
+        });
+      }
     });
   });
 
@@ -93,13 +115,10 @@ function initCollection(app, proceed) {
         },
       };
 
-      // Optionally start fresh
-      if (app.args.clean) {
-          collection.deleteMany().done(proceed);
-      }
-      else {
-        proceed();
-      }
+      executeSequence([
+        app.args.clean ? (function(go) { collection.deleteMany({}, go); }) : null,
+        app.args.clean ? (function(go) { collection.createIndex({ uri: 1 }, { unique: true }, go); }) : null
+      ], proceed);
     }
   });
 }
@@ -109,8 +128,8 @@ function initWorker(app, proceed) {
 
   var host = app.config.site.host;
   var timeout = app.config.worker.timeout;
-  var recognize = app.config.site.recognize;
   var forEachLink = app.config.site.forEachLink;
+  var forEachLeaf = app.config.site.forEachLeaf;
 
   function doRequest(uri, callback) {
     var url = host + uri;
@@ -121,33 +140,28 @@ function initWorker(app, proceed) {
     }, callback);
   }
 
-  function handleValidResponse(uri, text, updateTasks) {
-    if (recognize(text)) {
-      console.log("recognized", uri);
-      updateTasks.push(function(proceed) {
-        app.collection.add({
-          uri: uri,
-          created_at: new Date(),
-          crawlerVersion: crawlerVersion
-        }, proceed);
-      });
-    }
+  function handleValidResponse(uri, text) {
+    var updateTasks = [];
     forEachLink(text, function(hrefUri) {
       updateTasks.push(function(proceed) {
         app.queue.enqueue(hrefUri, proceed);
       });
     });
-  }
-
-  function whenTasksComplete(tasks, proceed) {
-    (function go() {
-      (tasks.shift() || proceed)(go);
-    })();
+    forEachLeaf(text, function(hrefUri) {
+      console.log("recognized", hrefUri);
+      updateTasks.push(function(proceed) {
+        app.collection.add({
+          uri: hrefUri,
+          created_at: new Date(),
+          crawler_version: crawlerVersion
+        }, proceed);
+      });
+    });
+    return updateTasks;
   }
 
   app.worker = function(job, done) {
     var uri = job.data.uri;
-    var updateTasks = [];
     app.checklist.check(uri, function() {
       doRequest(uri, function(error, response, text) {
         if (error) {
@@ -161,12 +175,12 @@ function initWorker(app, proceed) {
         }
         else {
           console.log("content received", uri);
-          handleValidResponse(uri, text, updateTasks);
+          var updateTasks = handleValidResponse(uri, text);
           if (updateTasks.length == 0) {
             console.log("warning: apparent dead end", uri);
           }
+          executeSequence(updateTasks, done);
         }
-        whenTasksComplete(updateTasks, done);
       });
     });
   };
@@ -189,24 +203,24 @@ function startApp(app) {
   var app = {
     args: args,
     scrapeId: "xxxxx",
+    exit: function(status) {
+      status = status || 0;
+      console.log("Exiting...");
+      process.exit(status);
+    },
     abort: function(msg, error) {
       console.log(msg, error);
-      console.log("Exiting...");
-      process.exit(1);
+      this.exit(1);
     }
   };
 
-  var appSequence = [
-    initConfig,
-    initQueue,
-    initChecklist,
-    initCollection,
-    initWorker,
-    primeApp,
-    startApp
-  ];
+  executeSequence([
+    function(done){ initConfig(app, done); },
+    function(done){ initQueue(app, done); },
+    function(done){ initChecklist(app, done); },
+    function(done){ initCollection(app, done); },
+    function(done){ initWorker(app, done); },
+    function(done){ primeApp(app, done); },
+  ], function() { startApp(app); });
 
-  (function go() {
-    (appSequence.shift())(app, go);
-  })();
 })(yargs.argv);

@@ -1,71 +1,79 @@
 // config.js
 
-function looksLikeIndexPage(text) {
-  return text.indexOf(" ns-special mw-special-Allpages ") > 0;
-}
+var extend = require("extend");
 
-function findOne(text, regex, callback) {
-  var match;
-  if (match = regex.exec(text)) {
-    callback(match[1].replace(/\&amp\;/g, "&"));
+function configure(params, callback) {
+
+  var site = params.site || "en_wikipedia";
+  var component = params.component || "master";
+  var env = params.env || "dev";
+
+  function generalConfig() {
+    return {
+      site: require("./" + site + ".js"),
+      crawlerQueue: (function() {
+        return {
+          prefix: "cq",
+          redis: {
+            host: "localhost",
+            port: 6379,
+            db: 1
+          }
+        };
+      })(),
+      scraperQueue: (function() {
+        return {
+          prefix: "sc",
+          redis: {
+            host: "localhost",
+            port: 6379,
+            db: 1
+          }
+        };
+      })(),
+      checklist: (function() {
+        return {
+          redis: {
+            host: "localhost",
+            port: 6379,
+            db: 2
+          }
+        };
+      })(),
+      database: (function() {
+        return {
+          mongo: {
+            host: "localhost",
+            port: 27017,
+            database: "local",
+            collection: site
+          }
+        };
+      })()
+    };
   }
-}
 
-function findAll(text, regex, callback) {
-  var match;
-  while (match = regex.exec(text)) {
-    callback(match[1].replace(/\&amp\;/g, "&"));
-  }
-}
-
-var en_wikipedia = {
-  type: "en",
-  site: {
-    host: "https://en.wikipedia.org",
-    origin: "/wiki/Special:AllPages",
-    forEachLink: function(text, callback) {
-      if (looksLikeIndexPage(text)) {
-        findOne(text, /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" title="Special\:AllPages">Next /g, callback);
+  function componentConfig() {
+    var conf = {};
+    if (component == "crawler") {
+      conf.worker = {
+        concurrency: 5,
+        timeout: 15000
+      };
+    }
+    else if (component == "scraper") {
+      conf.scraper = {
+        concurrency: 5,
+        timeout: 15000,
+        freshnessTime: 1000 * 60 * 60 * 24 * 4
       }
-    },
-    forEachLeaf: function(text, callback) {
-      if (looksLikeIndexPage(text)) {
-        findAll(text, /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g, callback);
-      }
-    },
-    versionHeaders: { "last-modified": 1 }
-  },
-  worker: {
-    concurrency: 5,
-    timeout: 15000,
-    freshnessTime: 1000 * 60 * 60 * 24 * 4
-  },
-  queue: {
-    prefix: "q",
-    redis: {
-      host: "localhost",
-      port: 6379,
-      db: 1
     }
-  },
-  checklist: {
-    redis: {
-      host: "localhost",
-      port: 6379,
-      db: 3
-    }
-  },
-  database: {
-    mongo: {
-      host: "localhost",
-      port: 27017,
-      database: "local",
-      collection: "en_wikipedia"
-    }
+    return conf;
   }
-};
+
+  return extend(true, generalConfig(), componentConfig(), params);
+}
 
 module.exports = {
-  default: en_wikipedia,
-  en_wikipedia: en_wikipedia
+  configure: configure
 };

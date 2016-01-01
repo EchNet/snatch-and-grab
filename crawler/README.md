@@ -15,8 +15,6 @@ It writes a summary file on exit.
 Configuration:
   This crawler looks for links matching certain patterns and queues them.
 
-Canonicalize the URL(?)
-
 Data components:
   Redis / Kue
   MongoDB
@@ -28,4 +26,3 @@ Initial record written to MongoDB includes:
   uri
   created_at
   version of crawler
-  crawl_error (if any)

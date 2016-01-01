@@ -17,7 +17,7 @@ function looksLikeIndexPage(text) {
 }
 
 function fixUri(uri) {
-  return match[1].replace(/\&amp\;/g, "&");
+  return uri.replace(/\&amp\;/g, "&");
 }
 
 function crawlText(text, crawler) {

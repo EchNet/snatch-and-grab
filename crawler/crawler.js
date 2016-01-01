@@ -3,44 +3,17 @@
 var component = "crawler";
 var version = "0.1.1.10";
 
-var redis = require("redis");
-var yargs = require("yargs");
 var request = require("request");
-var extend = require("extend");
 
-function initCollection(app, proceed) {
-  console.log("init collection...");
-  var conf = app.config.database.mongo;
-  var url = "mongodb://" + conf.host + ":" + conf.port + "/" + conf.database;
+var App = require("./app.js").App;
 
-  mongo.MongoClient.connect(url, function(err, db) {
-    if (err) {
-      app.abort("database error", err);
-    }
-    else {
-      var collection = db.collection(conf.collection);
+var app = new App("crawler");
 
-      app.collection = {
-        add: function(record, callback) {
-          collection.insertOne(record, null, callback);
-        },
-      };
-
-      executeSequence([
-        app.args.clean ? (function(go) { collection.deleteMany({}, go); }) : null,
-        app.args.clean ? (function(go) { collection.createIndex({ uri: 1 }, { unique: true }, go); }) : null
-      ], proceed);
-    }
-  });
-}
-
-function initWorker(app, proceed) {
-  console.log("init worker...");
+app.open([ "crawlerQueue", "db" ], function(queue, db) {
 
   var host = app.config.site.host;
   var timeout = app.config.worker.timeout;
-  var forEachLink = app.config.site.forEachLink;
-  var forEachLeaf = app.config.site.forEachLeaf;
+  var crawlText = app.config.site.crawlText;
 
   function doRequest(uri, callback) {
     var url = host + uri;
@@ -53,25 +26,27 @@ function initWorker(app, proceed) {
 
   function handleValidResponse(uri, text) {
     var updateTasks = [];
-    forEachLink(text, function(hrefUri) {
-      updateTasks.push(function(proceed) {
-        app.queue.enqueue(hrefUri, proceed);
-      });
-    });
-    forEachLeaf(text, function(hrefUri) {
-      console.log("recognized", hrefUri);
-      updateTasks.push(function(proceed) {
-        app.collection.add({
-          uri: hrefUri,
-          created_at: new Date(),
-          crawler_version: component + " " + version;
-        }, proceed);
-      });
+    crawlText(text, {
+      crawl: function(hrefUri) {
+        updateTasks.push(function(proceed) {
+          queue.enqueue(hrefUri, proceed);
+        });
+      },
+      recognize: function(hrefUri) {
+        console.log("recognized", hrefUri);
+        updateTasks.push(function(proceed) {
+          db.collection.insertOne({
+            uri: hrefUri,
+            created_at: new Date(),
+            crawler_version: component + " " + version
+          }, null, proceed);
+        });
+      }
     });
     return updateTasks;
   }
 
-  app.worker = function(job, done) {
+  function work(job, done) {
     var uri = job.data.uri;
     doRequest(uri, function(error, response, text) {
       if (error) {
@@ -94,32 +69,15 @@ function initWorker(app, proceed) {
     });
   };
 
-  proceed();
-}
+  function process() {
+    console.log("Processing...");
+    queue.process(work);
+  }
 
-(function(args) {
-  var app = {
-    args: args,
-    scrapeId: "xxxxx",
-    exit: function(status) {
-      status = status || 0;
-      console.log("Exiting...");
-      process.exit(status);
-    },
-    abort: function(msg, error) {
-      console.log(msg, error);
-      this.exit(1);
-    }
-  };
-
-  executeSequence([
-    function(done){ initConfig(app, done); },
-    function(done){ initQueue(app, done); },
-    function(done){ initCollection(app, done); },
-    function(done){ initWorker(app, done); },
-  ], function() {
-    console.log("start app");
-    app.queue.process(app.worker);
-  });
-
-})(yargs.argv);
+  if (app.args.clean) {
+    collection.deleteMany({}, process);
+  }
+  else {
+    process();
+  }
+});

@@ -129,7 +129,7 @@ function openServices(app, ids, callback) {
     (function next() {
       var ix = services.length;
       if (ix < ids.length) {
-        openService(app, ids[ix], function(service) {
+        openServices(app, ids[ix], function(service) {
           services.push(service);
           next();
         });

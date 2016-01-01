@@ -25,7 +25,7 @@ function seedDatabase(app) {
     var MongoClient = require("mongodb").MongoClient;
     var conf = app.config.database.mongo;
     var url = "mongodb://" + conf.host + ":" + conf.port + "/" + conf.database;
-    console.log("open " + url + "...");
+    console.log("Connecting to " + url + "...");
     MongoClient.connect(url, function(err, db) {
       if (err) {
         app.abort("database error", err);
@@ -69,10 +69,9 @@ function seedWorkQueue(app, which) {
 
   function openWorkQueue(service) {
     var kue = require("kue");
-    console.log("init queue...");
+    console.log("Initializing " + which + " queue...");
     var conf = app.config[which + "Queue"];
     var queue = kue.createQueue(conf);
-    var concurrency = app.config.worker.concurrency;
 
     // Clean up after completed jobs.
     queue.on("job complete", function(id) {
@@ -93,6 +92,7 @@ function seedWorkQueue(app, which) {
         queue.create("job", { uri: uri }).save(callback);
       },
       process: function(worker) {
+        var concurrency = app.config.worker.concurrency || 1;
         queue.process("job", concurrency, worker);
       }
     };

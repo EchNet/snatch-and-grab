@@ -117,6 +117,58 @@ function seedWorkQueue(app, which) {
 }
 
 //
+// Redis checklist connector.
+//
+function seedChecklist(app) { 
+
+  function openChecklist(service, callback) {
+    console.log("Initializing checklist...");
+    var redis = require("redis");
+    var redisConfig = app.config.checklist.redis;
+    var redisClient = redis.createClient({
+      host: redisConfig.host,
+      port: redisConfig.port
+    });
+    redisClient.select(redisConfig.db, function(err) {
+      if (err) {
+        app.abort("redis select", err);
+      }
+      else {
+        var wrapper = {
+          check: function(uri, callback) {
+            redisClient.get(uri, function(err, reply) {
+              if (!reply) {
+                redisClient.set(uri, "X", callback);
+              }
+            });
+          }
+        };
+        service.redisClient = redisClient;
+        service.wrapper = wrapper;
+        callback(wrapper);
+      }
+    });
+  }
+
+  return {
+    open: function(callback) {
+      if (this.wrapper) {
+        callback(this.wrapper);
+      }
+      else {
+        openChecklist(this, callback);
+      }
+    },
+    close: function(callback) {
+      if (this.redisClient) {
+        this.redisClient.quit();
+      }
+      callback();
+    }
+  };
+}
+
+//
 // App services management.
 //
 
@@ -171,7 +223,7 @@ function abort(app, msg, error) {
 function App(component) {
   var self = this;
   var args = require("yargs").argv;
-  var config = require("./config.js").configure({
+  var config = require("./config.js")({
     component: component,
     site: args.site,
     env: args.env

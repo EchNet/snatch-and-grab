@@ -1,5 +1,8 @@
 // en_wikipedia.js
 
+var geoformat = require("./geoformat.js");
+var extend = require("extend");
+
 var host = "https://en.wikipedia.org";
 
 var originUri = "/wiki/Special:AllPages";
@@ -10,10 +13,12 @@ var nextLinkInContextRegex =
 var articleLinkInContextRegex =
   /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g;
 
-var versionHeaders = { "last-modified": 1 };
-
 function looksLikeIndexPage(text) {
   return text.indexOf(" ns-special mw-special-Allpages ") > 0;
+}
+
+function looksLikeArticlePage(text) {
+  return text.indexOf(" ns-subject page") > 0;
 }
 
 function fixUri(uri) {
@@ -32,9 +37,36 @@ function crawlText(text, crawler) {
   }
 }
 
+function scrapeText(text) {
+  var scrapage = null;
+  if (looksLikeArticlePage(text)) {
+    scrapage = {};
+    var match;
+    if (match = /<span class="latitude">([0-9][^<]*)</.exec(text)) {
+      scrapage = extend(true, scrapage, { geo: { latitude: geoformat.parseValue(match[1]), g0: 1 } });
+    }
+    if (match = /<span class="longitude">([0-9][^<]*)</.exec(text)) {
+      scrapage = extend(true, scrapage, { geo: { longitude: geoformat.parseValue(match[1]), g1: 1 } });
+    }
+    if (match = /<span class="geo-dec"[^>]*>([-0-9][^<]*)</.exec(text)) {
+      var geo = geoformat.parseLatLong(match[1]);
+      if (geo) {
+        scrapage = extend(true, scrapage, { geo: geo }, { geo: { g2: 1 } });
+      }
+    }
+    if (match = /<span class="geo"[^>]*>([-0-9][^<]*)</.exec(text)) {
+      var geo = geoformat.parseLatLong(match[1]);
+      if (geo) {
+        scrapage = extend(true, scrapage, { geo: geo }, { geo: { g3: 1 } });
+      }
+    }
+  }
+  return scrapage;
+}
+
 module.exports = {
   host: host,
   origin: originUri,
-  versionHeaders: versionHeaders,
-  crawlText: crawlText
+  crawlText: crawlText,
+  scrapeText: scrapeText
 };

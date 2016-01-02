@@ -74,6 +74,4 @@ function configure(params, callback) {
   return extend(true, generalConfig(), componentConfig(), params);
 }
 
-module.exports = {
-  configure: configure
-};
+module.exports = configure;

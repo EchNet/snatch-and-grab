@@ -32,11 +32,11 @@ function seedDatabase(app) {
       }
       else {
         var collection = db.collection(conf.collection);
-        var controlCollection = db.collection(controlCollection);
+        var controlCollection = db.collection(conf.controlCollection);
         var wrapper = {
           db: db,
           collection: collection,
-          control: control
+          controlCollection: controlCollection
         };
         service.wrapper = wrapper;
         callback(wrapper);
@@ -71,14 +71,14 @@ function seedWorkQueue(app, which) {
 
   function openWorkQueue(service) {
     var kue = require("kue");
-    console.log("Initializing " + which + " queue...");
-    var conf = app.config[which + "Queue"];
+    console.log("Initializing", which);
+    var conf = app.config[which];
     var queue = kue.createQueue(conf);
 
     // Clean up after completed jobs.
     queue.on("job complete", function(id) {
       kue.Job.get(id, function(err, job) {
-        job.remove();
+        job && job.remove();
       });
     });
 
@@ -96,6 +96,9 @@ function seedWorkQueue(app, which) {
       process: function(worker) {
         var concurrency = conf.concurrency || 1;
         queue.process("job", concurrency, worker);
+      },
+      inactiveCount: function(callback) {
+        queue.inactiveCount(callback);
       }
     };
   };
@@ -236,8 +239,8 @@ function App(component) {
   self.config = config;
   self.services = {
     db: seedDatabase(self),
-    crawlerQueue: seedWorkQueue(self, "crawler"),
-    scraperQueue: seedWorkQueue(self, "scraper")
+    crawlerQueue: seedWorkQueue(self, "crawlerQueue"),
+    scraperQueue: seedWorkQueue(self, "scraperQueue")
   };
 
   self.executeSequence = executeSequence;

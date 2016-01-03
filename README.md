@@ -8,6 +8,8 @@ NodeJS 5.2.0 and NPM
 
 Redis  http://redis.io/download    tested using version 2.6   latest is 3.0
 
+MongoDB    tested using 3.0.8
+
 ## Architecture ##
 
 Data components
@@ -20,6 +22,7 @@ Data components
 Functional components
 - Crawler   (NodeJS)
 - Scraper   (NodeJS)
+- Master Control  (NodeJS)
 - Query   (??)
 - UI   (plain jQuery)
 

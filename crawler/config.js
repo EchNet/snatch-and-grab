@@ -9,87 +9,86 @@ module.exports = function(params) {
 
   var extend = require("extend");
 
-  var defaults = {
+  params = extend({
     site: "en_wikipedia",
     component: "master",
     env: "dev"
-  }
+  }, params);
 
-  // The eventual result.
-  var config = extend(true, {}, defaults, params);
+  var site = params.site;
+  var component = params.component;
+  var env = params.env;
 
-  var site = config.site;
-  var component = config.component;
-  var env = config.env;
+  return {
+    params: params,
 
-  config.site = require("./" + site + ".js");
+    site: require("./" + site + ".js"),
 
-  config.request = (function() {
-    return {
-      request: {
-        timeout: 15000
-      }
-    };
-  })();
+    request: (function() {
+      return {
+        request: {
+          timeout: 15000
+        }
+      };
+    })(),
 
-  config.crawlerQueue = (function() {
-    return {
-      prefix: "cq",
-      concurrency: 5,
-      redis: {
-        host: "localhost",
-        port: 6379,
-        db: 1
-      }
-    };
-  })();
+    crawlerQueue: (function() {
+      return {
+        prefix: "cq",
+        concurrency: 5,
+        redis: {
+          host: "localhost",
+          port: 6379,
+          db: 1
+        }
+      };
+    })(),
 
-  config.scraperQueue = (function() {
-    return {
-      prefix: "sc",
-      concurrency: 5,
-      redis: {
-        host: "localhost",
-        port: 6379,
-        db: 1
-      }
-    };
-  })();
+    scraperQueue: (function() {
+      return {
+        prefix: "sc",
+        concurrency: 5,
+        redis: {
+          host: "localhost",
+          port: 6379,
+          db: 2
+        }
+      };
+    })(),
 
-  config.checklist = (function() {
-    return {
-      redis: {
-        host: "localhost",
-        port: 6379,
-        db: 2
-      }
-    };
-  })();
+    checklist: (function() {
+      return {
+        redis: {
+          host: "localhost",
+          port: 6379,
+          db: 3
+        }
+      };
+    })(),
 
-  config.database = (function() {
-    return {
-      mongo: {
-        host: env == "dev" ? "localhost" : "db.whwh.fyi",
-        port: 27017,
-        database: "local",
-        collection: site,
-        controlCollection: "control"
-      }
-    };
-  })();
+    database: (function() {
+      return {
+        mongo: {
+          host: env == "dev" ? "localhost" : "db.whwh.fyi",
+          port: 27017,
+          database: "local",
+          collection: site,
+          controlCollection: "control"
+        }
+      };
+    })(),
 
-  config.control = (function() {
-    var second = 1000;
-    var minute = second * 60;
-    var hour = minute * 60;
-    var day = hour * 24;
-    return {
-      quantum: minute,
-      scrapesPerQuantum: env == "dev" ? 5 : 1000,
-      scrapeFreshnessTime: env == "dev" ? minute : day
-      crawlFreshnessTime: env == "dev" ? minute : (day * 2)
-    };
-  })();
-
-  return config;
+    control: (function() {
+      var second = 1000;
+      var minute = second * 60;
+      var hour = minute * 60;
+      var day = hour * 24;
+      return {
+        quantum: minute,
+        scrapesPerQuantum: env == "dev" ? 5 : 1000,
+        scrapeFreshnessTime: env == "dev" ? minute : day,
+        crawlFreshnessTime: env == "dev" ? minute : (day * 2)
+      };
+    })()
+  };
 }

@@ -10,7 +10,7 @@ var app = new App("master");
 app.open([ "db", "scraperQueue", "crawlerQueue" ],
     function(db, scraperQueue, crawlerQueue) {
 
-  var site = app.config.site;
+  var site = app.config.params.site;
   var crawlFreshnessTime = app.config.control.crawlFreshnessTime;
   var scrapeFreshnessTime = app.config.control.scrapeFreshnessTime;
 
@@ -25,11 +25,13 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
       if (err) {
         app.abort(uri, "query error", err);
       }
-      else if (controlDoc == null) {
+      else if (!controlDoc) {
         controlDoc = defaultControlDoc();
+        console.log("initialize control doc", controlDoc);
         db.controlCollection.insertOne(controlDoc, callback);
       }
       else {
+        console.log("fetched control doc", controlDoc);
         callback(controlDoc);
       }
     });
@@ -40,6 +42,7 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
     db.controlCollection.replaceOne({
       site: site
     }, controlDoc, function(err, results) {
+      console.log("updated control doc", controlDoc);
       callback();
     });
   }
@@ -60,6 +63,7 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
     }, {
       limit: max
     }, function(err, results) {
+console.log("getUnscraped", results);
       appendUris(results, uris);
       callback();
     });
@@ -81,12 +85,17 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
   }
 
   function feedScraper(controlDoc, callback) {
+    console.log("feeding scraper...");
     var max = app.config.control.scrapesPerQuantum;
     var uris = [];
     app.executeSequence([
       function(done) {
         scraperQueue.inactiveCount(function(err, total) {
-          if (!err) {
+          if (err) {
+            console.log("error accessing scraper queue", err);
+          }
+          else {
+            console.log("waiting scrape jobs", total);
             max -= Math.min(max, total);
           }
           done();
@@ -97,6 +106,7 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
           done();
         }
         else {
+          console.log("fetching unscraped");
           getUnscrapedUris(uris, max, done);
         }
       },
@@ -105,12 +115,13 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
           done();
         }
         else {
+          console.log("fetching stale");
           getStaleUris(uris, max, done);
         }
       },
       function(done) {
         for (var i = 0; i < uris.length; ++i) {
-          queue.enqueue(uris[i]);   // fire and forget
+          scraperQueue.enqueue(uris[i]);   // fire and forget
         }
         done();
       }
@@ -118,18 +129,30 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
   }
 
   function feedCrawler(controlDoc, callback) {
+    console.log("feeding crawler...");
     crawlerQueue.inactiveCount(function(err, total) {
-      if (!err && total == 0) {
+      if (err) {
+        console.log("error accessing crawler queue", err);
+      }
+      else if (total > 0) {
+        console.log("crawler is busy");
+      }
+      else {
         var now = new Date().getTime();
         if (controlDoc.last_crawl_time == undefined ||
             now - controlDoc.last_crawl_time.getTime() > crawlFreshnessTime) {
           crawlerQueue.enqueue(app.config.site.origin);
         }
+        else {
+          console.log("crawler has run recently");
+        }
       }
+      callback();
     });
   }
 
   function work() {
+    console.log("working...");
     lookupControlDoc(function(controlDoc) {
       feedScraper(controlDoc, function() {
         feedCrawler(controlDoc, function() {
@@ -140,4 +163,5 @@ app.open([ "db", "scraperQueue", "crawlerQueue" ],
   }
 
   setInterval(work, app.config.control.quantum);
+  work();
 });

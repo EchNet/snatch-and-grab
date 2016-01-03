@@ -12,7 +12,7 @@ var app = new App("crawler");
 app.open([ "scraperQueue", "db" ], function(queue, db) {
 
   var host = app.config.site.host;
-  var timeout = app.config.worker.timeout;
+  var timeout = app.config.request.timeout;
   var scrapeText = app.config.site.scrapeText;
 
   function lookupRecord(uri, callback) {
@@ -73,15 +73,6 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
     });
   }
 
-  function process() {
-    console.log("Processing...");
-    queue.process(work);
-  }
-
-  if (app.args.clean) {
-    collection.deleteMany({}, process);
-  }
-  else {
-    process();
-  }
+  console.log("Processing...");
+  queue.process(work);
 });

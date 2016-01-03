@@ -12,7 +12,7 @@ var app = new App("crawler");
 app.open([ "crawlerQueue", "db" ], function(queue, db) {
 
   var host = app.config.site.host;
-  var timeout = app.config.worker.timeout;
+  var timeout = app.config.request.timeout;
   var crawlText = app.config.site.crawlText;
 
   function doRequest(uri, callback) {
@@ -69,15 +69,6 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     });
   };
 
-  function process() {
-    console.log("Processing...");
-    queue.process(work);
-  }
-
-  if (app.args.clean) {
-    collection.deleteMany({}, process);
-  }
-  else {
-    process();
-  }
+  console.log("Processing...");
+  queue.process(work);
 });

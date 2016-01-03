@@ -32,9 +32,11 @@ function seedDatabase(app) {
       }
       else {
         var collection = db.collection(conf.collection);
+        var controlCollection = db.collection(controlCollection);
         var wrapper = {
           db: db,
-          collection: collection
+          collection: collection,
+          control: control
         };
         service.wrapper = wrapper;
         callback(wrapper);
@@ -92,7 +94,7 @@ function seedWorkQueue(app, which) {
         queue.create("job", { uri: uri }).save(callback);
       },
       process: function(worker) {
-        var concurrency = app.config.worker.concurrency || 1;
+        var concurrency = conf.concurrency || 1;
         queue.process("job", concurrency, worker);
       }
     };

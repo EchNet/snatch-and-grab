@@ -1,77 +1,95 @@
 // config.js
 
-var extend = require("extend");
+// Synchronous configuration based on input parameters.
+// params.site           The site to crawl
+// params.component      What component is running (e.g. scraper)
+// params.env            Runtime environment (dev vs. prod)
+//
+module.exports = function(params) {
 
-function configure(params, callback) {
+  var extend = require("extend");
 
-  var site = params.site || "en_wikipedia";
-  var component = params.component || "master";
-  var env = params.env || "dev";
+  var defaults = {
+    site: "en_wikipedia",
+    component: "master",
+    env: "dev"
+  }
 
-  function generalConfig() {
+  // The eventual result.
+  var config = extend(true, {}, defaults, params);
+
+  var site = config.site;
+  var component = config.component;
+  var env = config.env;
+
+  config.site = require("./" + site + ".js");
+
+  config.request = (function() {
     return {
-      site: require("./" + site + ".js"),
-      crawlerQueue: (function() {
-        return {
-          prefix: "cq",
-          redis: {
-            host: "localhost",
-            port: 6379,
-            db: 1
-          }
-        };
-      })(),
-      scraperQueue: (function() {
-        return {
-          prefix: "sc",
-          redis: {
-            host: "localhost",
-            port: 6379,
-            db: 1
-          }
-        };
-      })(),
-      checklist: (function() {
-        return {
-          redis: {
-            host: "localhost",
-            port: 6379,
-            db: 2
-          }
-        };
-      })(),
-      database: (function() {
-        return {
-          mongo: {
-            host: "localhost",
-            port: 27017,
-            database: "local",
-            collection: site
-          }
-        };
-      })()
-    };
-  }
-
-  function componentConfig() {
-    var conf = {};
-    if (component == "crawler") {
-      conf.worker = {
-        concurrency: 5,
+      request: {
         timeout: 15000
-      };
-    }
-    else if (component == "scraper") {
-      conf.scraper = {
-        concurrency: 5,
-        timeout: 15000,
-        freshnessTime: 1000 * 60 * 60 * 24 * 4
       }
-    }
-    return conf;
-  }
+    };
+  })();
 
-  return extend(true, generalConfig(), componentConfig(), params);
+  config.crawlerQueue = (function() {
+    return {
+      prefix: "cq",
+      concurrency: 5,
+      redis: {
+        host: "localhost",
+        port: 6379,
+        db: 1
+      }
+    };
+  })();
+
+  config.scraperQueue = (function() {
+    return {
+      prefix: "sc",
+      concurrency: 5,
+      redis: {
+        host: "localhost",
+        port: 6379,
+        db: 1
+      }
+    };
+  })();
+
+  config.checklist = (function() {
+    return {
+      redis: {
+        host: "localhost",
+        port: 6379,
+        db: 2
+      }
+    };
+  })();
+
+  config.database = (function() {
+    return {
+      mongo: {
+        host: env == "dev" ? "localhost" : "db.whwh.fyi",
+        port: 27017,
+        database: "local",
+        collection: site,
+        controlCollection: "control"
+      }
+    };
+  })();
+
+  config.control = (function() {
+    var second = 1000;
+    var minute = second * 60;
+    var hour = minute * 60;
+    var day = hour * 24;
+    return {
+      quantum: minute,
+      scrapesPerQuantum: env == "dev" ? 5 : 1000,
+      scrapeFreshnessTime: env == "dev" ? minute : day
+      crawlFreshnessTime: env == "dev" ? minute : (day * 2)
+    };
+  })();
+
+  return config;
 }
-
-module.exports = configure;

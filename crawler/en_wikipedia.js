@@ -1,6 +1,6 @@
 // en_wikipedia.js
 
-var geoformat = require("./geoformat.js");
+var geoformat = require("./geoformat");
 var extend = require("extend");
 
 var host = "https://en.wikipedia.org";

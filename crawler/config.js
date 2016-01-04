@@ -87,7 +87,7 @@ module.exports = function(params) {
         quantum: minute,
         scrapesPerQuantum: env == "dev" ? 100 : 1000,
         scrapeFreshnessTime: env == "dev" ? minute : day,
-        crawlFreshnessTime: env == "dev" ? minute : (day * 2)
+        crawlInterval: env == "dev" ? minute : day
       };
     })()
   };

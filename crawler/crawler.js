@@ -4,7 +4,7 @@ var version = "0.1.1.10";
 
 var request = require("request");
 
-var App = require("./app.js").App;
+var App = require("./app").App;
 
 var app = new App("crawler");
 
@@ -32,13 +32,23 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
         });
       },
       recognize: function(hrefUri) {
-        console.log("recognized", hrefUri);
         updateTasks.push(function(proceed) {
-          db.collection.insertOne({
-            uri: hrefUri,
-            created_at: new Date(),
-            crawler_version: version
-          }, null, proceed);
+          db.collection.findOne({
+            uri: hrefUri
+          }, function(err, result) {
+            if (result) {
+              console.log(hrefUri, "already counted");
+              proceed();
+            }
+            else {
+              console.log(hrefUri, "counted");
+              db.collection.insertOne({
+                uri: hrefUri,
+                created_at: new Date(),
+                crawler_version: version
+              }, null, proceed);
+            }
+          });
         });
       }
     });
@@ -68,5 +78,31 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     });
   };
 
+  function keepPrimed() {
+    queue.inactiveCount(function(err, inactiveCount) {
+      if (err) {
+        console.log("error accessing crawler queue", err);
+      }
+      else if (inactiveCount > 0) {
+        console.log("crawler is busy, inactive count", inactiveCount);
+      }
+      else {
+        queue.activeCount(function(err, activeCount) {
+          if (err) {
+            console.log("error accessing crawler queue", err);
+          }
+          else if (activeCount > 0) {
+            console.log("crawler is busy, active count", activeCount);
+          }
+          else {
+            queue.enqueue(app.config.site.origin);
+          }
+        });
+      }
+    });
+  }
+
   queue.process(work);
+  setInterval(keepPrimed, app.config.control.crawlInterval);
+  keepPrimed();
 });

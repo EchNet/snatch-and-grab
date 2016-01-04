@@ -40,16 +40,18 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Switch to MongoDB.  Need to run some more sophisticated queries.
-  - Parse the various geocoordinate formats.
-  - Maintain the geo separation in a cleaner way.
-  - Record the version of each worker in the content.  Who did what, why.
+  - Clean aborted jobs out of queue.
+  - Clean up the scraper content format.
+  - Figure out what happened to Piazza Navona.
+  - Fix scrape queueing - avoid rescaping.
+  - Build an ElasticSearch index.
 
 1: (Crawler)
   Create a list of all of the articles in Wikipedia.
     - Result is a MongoDB collection
   As new articles are added, they appear on the list regularly.
   As the software is improved, the quality of the list improves.
+  The data lives in the cloud.
   The crawler runs in the cloud.
 
 2: (Scraper)
@@ -62,6 +64,7 @@ Operations
 3: (Indexer)
   Create a search index from the scraped content.
   Search engine answers the question "what's closest?"
+  The search engine lives in the cloud.
 
 4: (Query)
   Treat regions differently from points of interest

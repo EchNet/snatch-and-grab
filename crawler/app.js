@@ -97,6 +97,9 @@ function seedWorkQueue(app, which) {
         var concurrency = conf.concurrency || 1;
         queue.process("job", concurrency, worker);
       },
+      activeCount: function(callback) {
+        queue.activeCount(callback);
+      },
       inactiveCount: function(callback) {
         queue.inactiveCount(callback);
       }

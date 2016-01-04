@@ -1,6 +1,6 @@
 /* master.js */
 
-var App = require("./app.js").App;
+var App = require("./app").App;
 
 var app = new App("master");
 var fork = require('child_process').fork;

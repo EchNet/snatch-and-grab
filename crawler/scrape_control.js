@@ -1,6 +1,6 @@
 /* scrape_control.js */
 
-var App = require("./app.js").App;
+var App = require("./app").App;
 
 var app = new App("scrape_control");
 

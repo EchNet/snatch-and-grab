@@ -2,7 +2,7 @@
 
 var version = "0.1.1";
 
-var App = require("./app.js").App;
+var App = require("./app").App;
 
 var app = new App("schema");
 

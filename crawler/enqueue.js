@@ -1,6 +1,6 @@
 /* enqueue.js */
 
-var App = require("./app.js").App;
+var App = require("./app").App;
 
 var app = new App("enqueue");
 var queueId = app.args.queue || "crawlerQueue";

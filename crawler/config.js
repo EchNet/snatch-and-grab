@@ -29,8 +29,7 @@ module.exports = function(params) {
         request: {
           timeout: 5000
         }
-      };
-    })(),
+      }; })(),
 
     crawlerQueue: (function() {
       return {
@@ -47,7 +46,7 @@ module.exports = function(params) {
     scraperQueue: (function() {
       return {
         prefix: "sc",
-        concurrency: 1,
+        concurrency: 3,
         redis: {
           host: "localhost",
           port: 6379,
@@ -85,7 +84,7 @@ module.exports = function(params) {
       var day = hour * 24;
       return {
         quantum: minute,
-        scrapesPerQuantum: env == "dev" ? 100 : 1000,
+        scrapesPerQuantum: env == "dev" ? 200 : 2000,
         scrapeFreshnessTime: env == "dev" ? minute : day,
         crawlInterval: env == "dev" ? minute : day
       };

@@ -49,47 +49,50 @@ app.open([ "db", "scraperQueue" ], function(db, scraperQueue) {
     });
   }
 
-  var max = scrapesPerQuantum;
-  var uris = [];
+  function work() {
+    var max = scrapesPerQuantum;
+    var uris = [];
 
-  app.executeSequence([
-    function(done) {
-      scraperQueue.inactiveCount(function(err, total) {
-        if (err) {
-          console.log("error accessing scraper queue", err);
+    app.executeSequence([
+      function(done) {
+        scraperQueue.inactiveCount(function(err, total) {
+          if (err) {
+            console.log("error accessing scraper queue", err);
+          }
+          else {
+            console.log("waiting scrape jobs", total);
+            max -= Math.min(max, total);
+          }
+          done();
+        });
+      },
+      function(done) {
+        if (max == 0) {
+          done();
         }
         else {
-          console.log("waiting scrape jobs", total);
-          max -= Math.min(max, total);
+          console.log("fetching unscraped");
+          getUnscrapedUris(uris, max, done);
         }
-        done();
-      });
-    },
-    function(done) {
-      if (max == 0) {
-        done();
-      }
-      else {
-        console.log("fetching unscraped");
-        getUnscrapedUris(uris, max, done);
-      }
-    },
-    function(done) {
-      if (max == 0 || uris.length == max) {
-        done();
-      }
-      else {
-        console.log("fetching stale");
-        getStaleUris(uris, max, done);
-      }
-    },
-  ], function() {
-    app.executeSequence(uris.map(function(uri) {
-      return function(done) {
-        scraperQueue.enqueue(uri, done);
-      };
-    }), function() {
-      app.exit();
+      },
+      function(done) {
+        if (max == 0 || uris.length == max) {
+          done();
+        }
+        else {
+          console.log("fetching stale");
+          getStaleUris(uris, max, done);
+        }
+      },
+    ], function() {
+      app.executeSequence(uris.map(function(uri) {
+        return function(done) {
+          scraperQueue.enqueue(uri, done);
+        };
+      }));
     });
-  });
+  }
+
+  setInterval(work, app.config.control.quantum);
+  work();
 });

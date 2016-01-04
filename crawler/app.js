@@ -212,7 +212,7 @@ function closeAllServices(app, done) {
 function exit(app, status) {
   closeAllServices(app, function() {
     status = status || 0;
-    console.log("Exiting...");
+    console.log(app.config.params.component, "exiting", "(" + status + ")");
     process.exit(status);
   });
 }
@@ -248,6 +248,8 @@ function App(component) {
   self.open = function(id, callback) { openServices(self, id, callback); };
   self.exit = function() { exit(self); }
   self.abort = function() { abort(self); }
+
+  console.log(component, "starting");
 }
 
 module.exports = {

@@ -27,7 +27,7 @@ module.exports = function(params) {
     request: (function() {
       return {
         request: {
-          timeout: 15000
+          timeout: 5000
         }
       };
     })(),
@@ -35,7 +35,7 @@ module.exports = function(params) {
     crawlerQueue: (function() {
       return {
         prefix: "cq",
-        concurrency: 5,
+        concurrency: 1,
         redis: {
           host: "localhost",
           port: 6379,
@@ -47,7 +47,7 @@ module.exports = function(params) {
     scraperQueue: (function() {
       return {
         prefix: "sc",
-        concurrency: 5,
+        concurrency: 1,
         redis: {
           host: "localhost",
           port: 6379,
@@ -85,7 +85,7 @@ module.exports = function(params) {
       var day = hour * 24;
       return {
         quantum: minute,
-        scrapesPerQuantum: env == "dev" ? 5 : 1000,
+        scrapesPerQuantum: env == "dev" ? 100 : 1000,
         scrapeFreshnessTime: env == "dev" ? minute : day,
         crawlFreshnessTime: env == "dev" ? minute : (day * 2)
       };

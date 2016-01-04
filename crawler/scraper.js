@@ -1,13 +1,12 @@
 /* scraper.js */
 
-var component = "scraper";
 var version = "0.1.1";
 
 var request = require("request");
 
 var App = require("./app.js").App;
 
-var app = new App("crawler");
+var app = new App("scraper");
 
 app.open([ "scraperQueue", "db" ], function(queue, db) {
 
@@ -15,64 +14,44 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
   var timeout = app.config.request.timeout;
   var scrapeText = app.config.site.scrapeText;
 
-  function lookupRecord(uri, callback) {
+  function work(job, done) {
+    var uri = job.data.uri;
     db.collection.findOne({ uri: uri }, function(err, record) {
       if (err) {
         console.log(uri, "query error", err);
+        done();
       }
-      else {
-        callback(record);
-      }
-    });
-  }
-
-  function doRequest(uri, callback) {
-    var url = host + uri;
-    request({
-      url: url,
-      timeout: timeout,
-      followRedirect: false
-    }, callback);
-  }
-
-  function updateRecord(response, text, record) {
-    record.http_status = response.statusCode;
-    record.updated_at = new Date();
-    record.scraper_version = component + " " + version;
-    record.content = null;
-    if (response.statusCode == 200 &&
-        response.headers["content-type"] == "text/html; charset=UTF-8") {
-      record.content = scrapeText(text);
-    }
-  }
-
-  function replaceRecord(uri, record, done) {
-    db.collection.update({ uri: uri }, record, done);
-  }
-
-  function work(job, done) {
-    var uri = job.data.uri;
-    console.log("scrape", uri);
-    lookupRecord(uri, function(record) {
-      if (!record) {
+      else if (!record) {
         console.log(uri, "no such record");
+        done();
       }
       else {
-        doRequest(uri, function(error, response, text) {
-          if (error) {
+        console.log("request", uri);
+        request({
+          url: host + uri,
+          timeout: timeout,
+          followRedirect: false
+        }, function(err, response, text) {
+          if (err) {
             console.log(uri, "request error", error);
+            done();
           }
           else {
-            updateRecord(response, text, record);
-            replaceRecord(uri, record, done);
-            return;
+            record.http_status = response.statusCode;
+            record.updated_at = new Date();
+            record.scraper_version = version;
+            record.content = null;
+            if (response.statusCode == 200 &&
+                response.headers["content-type"] == "text/html; charset=UTF-8") {
+              console.log("scrape", uri);
+              record.content = scrapeText(text);
+            }
+            db.collection.update({ uri: uri }, record, done);
           }
         });
       }
-      done();
     });
   }
 
-  console.log("Processing...");
   queue.process(work);
 });

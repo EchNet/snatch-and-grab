@@ -2,7 +2,7 @@
 
 var App = require("./app.js").App;
 
-var app = new App("start_crawl");
+var app = new App("enqueue");
 var queueId = app.args.queue || "crawlerQueue";
 
 app.open(queueId, function(queue) {

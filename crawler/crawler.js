@@ -1,6 +1,5 @@
 /* crawler.js */
 
-var component = "crawler";
 var version = "0.1.1.10";
 
 var request = require("request");
@@ -38,7 +37,7 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
           db.collection.insertOne({
             uri: hrefUri,
             created_at: new Date(),
-            crawler_version: component + " " + version
+            crawler_version: version
           }, null, proceed);
         });
       }
@@ -69,6 +68,5 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     });
   };
 
-  console.log("Processing...");
   queue.process(work);
 });

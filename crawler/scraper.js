@@ -33,7 +33,7 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
           followRedirect: false
         }, function(err, response, text) {
           if (err) {
-            console.log(uri, "request error", error);
+            console.log(uri, "request error", err);
             done();
           }
           else {

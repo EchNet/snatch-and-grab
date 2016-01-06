@@ -8,7 +8,7 @@ var host = "https://en.wikipedia.org";
 var originUri = "/wiki/Special:AllPages";
 
 var nextLinkInContextRegex =
-  /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" title="Special\:AllPages">Next /g;
+  /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" title="Special\:AllPages">Next /;
 
 var articleLinkInContextRegex =
   /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g;
@@ -30,6 +30,9 @@ function crawlText(text, crawler) {
   if (looksLikeIndexPage(text)) {
     if (match = nextLinkInContextRegex.exec(text)) {
       crawler.crawl(fixUri(match[1]));
+    }
+    else {
+      console.log("no next page... is this the end?");
     }
     while (match = articleLinkInContextRegex.exec(text)) {
       crawler.recognize(fixUri(match[1]));

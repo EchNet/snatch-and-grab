@@ -75,33 +75,53 @@ function seedWorkQueue(app, which) {
     var conf = app.config[which];
     var queue = kue.createQueue(conf);
 
-    // Clean up after completed jobs.
-    queue.on("job complete", function(id) {
-      kue.Job.get(id, function(err, job) {
-        job && job.remove();
-      });
-    });
-
     // Handle error by shutting down.
     queue.on("error", function(error) {
       app.abort("queue error", error);
     });
 
+    function removeJobs(err, ids) {
+      if (err) {
+        console.log("error clearing queue", err);
+      }
+      if (ids) {
+        ids.forEach(function(id) {
+          kue.Job.get(id, function(err, job) {
+            job.remove();
+          });
+        });
+      }
+    }
+
     service.queue = queue;
     service.wrapper = {
       enqueue: function(uri, callback) {
         console.log("enqueue", uri);
-        queue.create("job", { uri: uri }).save(callback);
+        queue.create("job", { uri: uri }).removeOnComplete(true).save(callback);
       },
       process: function(worker) {
         var concurrency = conf.concurrency || 1;
         queue.process("job", concurrency, worker);
       },
-      activeCount: function(callback) {
-        queue.activeCount(callback);
+      clear: function(callback) {
+        queue.active(function(err, ids) {
+          removeJobs(err, ids);
+          queue.inactive(function(err, ids) {
+            removeJobs(err, ids);
+            callback && callback();
+          });
+        });
       },
-      inactiveCount: function(callback) {
-        queue.inactiveCount(callback);
+      ifEmpty: function(callback) {
+        queue.inactiveCount(function(err, inactiveCount) {
+          if (!err && inactiveCount == 0) {
+            queue.activeCount(function(err, activeCount) {
+              if (!err && activeCount == 0) {
+                callback();
+              }
+            });
+          }
+        });
       }
     };
   };

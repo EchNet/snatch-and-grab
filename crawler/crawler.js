@@ -37,7 +37,7 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
             uri: hrefUri
           }, function(err, result) {
             if (result) {
-              console.log(hrefUri, "already counted");
+              //console.log(hrefUri, "already counted");
               proceed();
             }
             else {
@@ -73,36 +73,24 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
         if (updateTasks.length == 0) {
           console.log("warning: apparent dead end", uri);
         }
-        executeSequence(updateTasks, done);
+        app.executeSequence(updateTasks, done);
       }
     });
   };
 
+  function prime() {
+    queue.enqueue(app.config.site.origin);
+  }
+
   function keepPrimed() {
-    queue.inactiveCount(function(err, inactiveCount) {
-      if (err) {
-        console.log("error accessing crawler queue", err);
-      }
-      else if (inactiveCount > 0) {
-        console.log("crawler is busy, inactive count", inactiveCount);
-      }
-      else {
-        queue.activeCount(function(err, activeCount) {
-          if (err) {
-            console.log("error accessing crawler queue", err);
-          }
-          else if (activeCount > 0) {
-            console.log("crawler is busy, active count", activeCount);
-          }
-          else {
-            queue.enqueue(app.config.site.origin);
-          }
-        });
-      }
-    });
+    queue.ifEmpty(prime);
+  }
+
+  if (app.args.restart) {
+    console.log("restarting");
+    queue.clear(prime);
   }
 
   queue.process(work);
   setInterval(keepPrimed, app.config.control.crawlInterval);
-  keepPrimed();
 });

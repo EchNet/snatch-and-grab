@@ -40,10 +40,10 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Clean aborted jobs out of queue.
-  - Clean up the scraper content format.
   - Figure out what happened to Piazza Navona.
-  - Fix scrape queueing - avoid rescaping.
+  - Clean up the scraper content format.
+  - Fix scrape queueing - avoid rescraping.
+  - Scrape tags.
   - Build an ElasticSearch index.
 
 1: (Crawler)

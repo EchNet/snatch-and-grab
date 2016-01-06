@@ -44,6 +44,7 @@ Operations
   - Clean up the scraper content format.
   - Fix scrape queueing - avoid rescraping.
   - Scrape tags.
+  - Is scraper following redirects (no 301s in db)?
   - Build an ElasticSearch index.
 
 1: (Crawler)

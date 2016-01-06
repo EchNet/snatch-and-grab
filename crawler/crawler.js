@@ -60,12 +60,15 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     doRequest(uri, function(error, response, text) {
       if (error) {
         console.log("request error", uri, error);
+        done();
       }
       else if (response.statusCode != 200) {
         console.log("bad HTTP status code", uri, response.statusCode);
+        done();
       }
       else if (response.headers["content-type"] != "text/html; charset=UTF-8") {
         console.log("bad content type", uri, response.headers["content-type"]);
+        done();
       }
       else {
         console.log("content received", uri);
@@ -78,7 +81,11 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     });
   };
 
-  function prime() {
+  function process() {
+    queue.process(work);
+  }
+
+  function prime(cont) {
     queue.enqueue(app.config.site.origin);
   }
 
@@ -88,9 +95,15 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
 
   if (app.args.restart) {
     console.log("restarting");
-    queue.clear(prime);
+    queue.clear(function() {
+      prime();
+      process();
+    });
+  }
+  else {
+    queue.restartJobs();
+    process();
   }
 
-  queue.process(work);
   setInterval(keepPrimed, app.config.control.crawlInterval);
 });

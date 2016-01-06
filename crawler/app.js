@@ -93,6 +93,19 @@ function seedWorkQueue(app, which) {
       }
     }
 
+    function requeueJobs(err, ids) {
+      if (err) {
+        console.log("error restarting queue", err);
+      }
+      if (ids) {
+        ids.forEach(function(id) {
+          kue.Job.get(id, function(err, job) {
+            job.inactive();
+          });
+        });
+      }
+    }
+
     service.queue = queue;
     service.wrapper = {
       enqueue: function(uri, callback) {
@@ -112,6 +125,12 @@ function seedWorkQueue(app, which) {
           });
         });
       },
+      restartJobs: function(callback) {
+        queue.active(function(err, ids) {
+          requeueJobs(err, ids);
+          callback && callback();
+        });
+      },
       ifEmpty: function(callback) {
         queue.inactiveCount(function(err, inactiveCount) {
           if (!err && inactiveCount == 0) {
@@ -122,6 +141,9 @@ function seedWorkQueue(app, which) {
             });
           }
         });
+      },
+      inactiveCount: function(callback) {
+        return queue.inactiveCount(callback);
       }
     };
   };

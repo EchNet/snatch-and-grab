@@ -84,7 +84,7 @@ module.exports = function(params) {
       var day = hour * 24;
       return {
         quantum: minute,
-        scrapesPerQuantum: env == "dev" ? 200 : 2000,
+        scrapesPerQuantum: env == "dev" ? 250 : 2500,
         scrapeFreshnessTime: env == "dev" ? minute : day,
         crawlInterval: env == "dev" ? minute : day
       };

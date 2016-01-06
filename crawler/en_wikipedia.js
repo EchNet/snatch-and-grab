@@ -7,16 +7,6 @@ var host = "https://en.wikipedia.org";
 
 var originUri = "/wiki/Special:AllPages";
 
-var nextLinkInContextRegex =
-  /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" title="Special\:AllPages">Next /;
-
-var articleLinkInContextRegex =
-  /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g;
-
-function looksLikeIndexPage(text) {
-  return text.indexOf(" ns-special mw-special-Allpages ") > 0;
-}
-
 function looksLikeArticlePage(text) {
   return text.indexOf(" ns-subject page") > 0;
 }
@@ -25,19 +15,30 @@ function fixUri(uri) {
   return uri.replace(/\&amp\;/g, "&");
 }
 
-function crawlText(text, crawler) {
+function crawlForNextLink(text, crawler) {
+  var nextLinkInContextRegex =
+    /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" title="Special\:AllPages">Next /;
   var match;
-  if (looksLikeIndexPage(text)) {
-    if (match = nextLinkInContextRegex.exec(text)) {
-      crawler.crawl(fixUri(match[1]));
-    }
-    else {
-      console.log("no next page... is this the end?");
-    }
-    while (match = articleLinkInContextRegex.exec(text)) {
-      crawler.recognize(fixUri(match[1]));
-    }
+  if (match = nextLinkInContextRegex.exec(text)) {
+    crawler.crawl(fixUri(match[1]));
   }
+  else {
+    console.log("no next page... is this the end?");
+  }
+}
+
+function crawlForArticleLinks(text, crawler) {
+  var articleLinkInContextRegex =
+    /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g;
+  var match;
+  while (match = articleLinkInContextRegex.exec(text)) {
+    crawler.recognize(fixUri(match[1]));
+  }
+}
+
+function crawlText(text, crawler) {
+  crawlForNextLink(text, crawler);
+  crawlForArticleLinks(text, crawler);
 }
 
 function scrapeText(text) {

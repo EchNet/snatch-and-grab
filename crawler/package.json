@@ -11,7 +11,8 @@
     "xmldom": "*",
     "yargs": "*",
     "extend": "*",
-    "request": "*"
+    "request": "*",
+    "html-entities": "*"
   },
   "devDependencies": {}
 }

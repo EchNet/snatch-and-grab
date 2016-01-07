@@ -40,9 +40,7 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Scrape title and tags.
   - Is scraper following redirects (no 301s in db)?
-  - Clean up the scraper content format.
   - Fix scrape queueing - avoid rescraping.
   - Build an ElasticSearch index.
 

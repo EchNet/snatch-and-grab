@@ -33,12 +33,10 @@ function parseLatLong(text) {
     var lat = parseValue(match[1]);
     if (!!lat) {
       coords.latitude = lat.value;
-      coords.latitude_text = lat.text;
     }
     var long = parseValue(match[2])
     if (!!long) {
       coords.longitude = long.value;
-      coords.longitude_text = long.text;
     }
     return coords;
   }

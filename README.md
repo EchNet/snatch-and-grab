@@ -40,11 +40,10 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Figure out what happened to Piazza Navona.
+  - Scrape title and tags.
+  - Is scraper following redirects (no 301s in db)?
   - Clean up the scraper content format.
   - Fix scrape queueing - avoid rescraping.
-  - Scrape tags.
-  - Is scraper following redirects (no 301s in db)?
   - Build an ElasticSearch index.
 
 1: (Crawler)

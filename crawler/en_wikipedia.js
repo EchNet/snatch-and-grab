@@ -29,7 +29,7 @@ function crawlForNextLink(text, crawler) {
 
 function crawlForArticleLinks(text, crawler) {
   var articleLinkInContextRegex =
-    /<li class=.allpagesredirect.><a href="(.wiki.[^"][^"]*)" /g;
+    /<li><a href="(\/wiki\/[^"][^"]*)" title=/g;
   var match;
   while (match = articleLinkInContextRegex.exec(text)) {
     crawler.recognize(fixUri(match[1]));

@@ -219,6 +219,71 @@ function seedChecklist(app) {
 }
 
 //
+// ElasticSearch connector.
+//
+function seedElasticSearch(app) { 
+
+  function openElasticSearch(callback) {
+    console.log("Initializing ElasticSearch client...");
+
+    var request = require("request");
+    var url = app.config.elasticsearch.url;
+    var timeout = app.config.request.timeout;
+
+    callback({
+      listIndexes: function(callback) {
+        request({
+          url: url + "/_cat/indices?v",
+          timeout: timeout
+        }, function(err, response, text) {
+          if (err) {
+            app.abort("ES request error", err);
+          }
+          else {
+            callback(text.split(" "));
+          }
+        });
+      },
+      createIndex: function(indexName, config, callback) {
+        request({
+          method: "PUT",
+          url: url + "/" + indexName,
+          json: config
+        }, function(err, response, text) {
+          if (err) {
+            app.abort("ES create index error", err);
+          }
+          console.log(text);
+          callback();
+        });
+      },
+      insert: function(indexName, docType, doc, callback) {
+        request({
+          method: "POST",
+          url: url + "/" + indexName + "/" + docType + "/",
+          json: doc
+        }, function(err, response, text) {
+          if (err) {
+            app.abort("ES insert error", err);
+          }
+          console.log(text);
+          callback();
+        });
+      }
+    });
+  }
+
+  return {
+    open: function(callback) {
+      openElasticSearch(callback);
+    },
+    close: function(callback) {
+      callback();
+    }
+  };
+}
+
+//
 // App services management.
 //
 
@@ -285,14 +350,15 @@ function App(component) {
   self.services = {
     db: seedDatabase(self),
     crawlerQueue: seedWorkQueue(self, "crawlerQueue"),
-    scraperQueue: seedWorkQueue(self, "scraperQueue")
+    scraperQueue: seedWorkQueue(self, "scraperQueue"),
+    elasticsearch: seedElasticSearch(self)
   };
 
   self.executeSequence = executeSequence;
 
   self.open = function(id, callback) { openServices(self, id, callback); };
   self.exit = function() { exit(self); }
-  self.abort = function() { abort(self); }
+  self.abort = function(msg, error) { abort(self, msg, error); }
 
   console.log(component, "starting");
 }

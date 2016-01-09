@@ -1,9 +1,13 @@
 #!/bin/sh
 set -e
 
-PIDFILE="data/mongod.lock"
+MONGO_PIDFILE="data/mongod.lock"
+ELASTICSEARCH_PIDFILE="data/elasticsearch.pid"
 
-if [ -f $PIDFILE ]; then
+for PIDFILE in $MONGO_PIDFILE $ELASTICSEARCH_PIDFILE; do
+  if [ -f $PIDFILE ]; then
     kill -3 `cat $PIDFILE` || true
-    sleep 3  # TODO: find a better way to wait for mongod to shut down 
-fi
+  fi
+done
+
+sleep 3  # TODO: find a better way to wait for mongod to shut down 

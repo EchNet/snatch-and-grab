@@ -1,39 +1,95 @@
+/* indexer.js */
 
-// This looks like code, but I'm just taking notes here.
+var version = "0.1.1";
 
-//
-// First, create an index.  This is your way to alternate between the in-use index and the one that's being build.
-// From the ElasticSearch Geo Points chapter.
-//
-function createAnIndex() {
-  var indexName = "my_index";
-  // Create the mappings for the index.  Define the location field.
-  return {
-    mappings: {
-      page: {
-        "_all": { "enabled": false },
-        properties: {
-          title: "string"
-        },
-        location: {
-          type: "geo_point"
+var request = require("request");
+
+var App = require("./app").App;
+
+var app = new App("indexer");
+
+var docType = "page";
+
+app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
+
+  var indexName;
+
+  // Find the next available index name
+  function nextAvailableIndexName(callback) {
+    elasticsearch.listIndexes(function(indexes) {
+      for (var n = 0; ; ++n) {
+        var name = "pages" + n;
+        if (indexes.indexOf(name) < 0) {
+          indexName = name;
+          break;
         }
       }
-    }
-  };
-}
+      callback();
+    });
+  }
 
-// LOAD data in like this
-function preferredFormat() {
-  // curl -XPUT "http://localhost:9200/index_name/doc_type/_id -d '{}'
-  return {
-    "uri": "/wiki/Piazza_Navona",
-    "title": "Piazza Navona",
-    "location": [ 12.5, 41.5 ]     // careful - reverse the order!
-  };
-}
+  // Create the index and specify its metadata.
+  function createIndex(callback) {
+    console.log("creating index", indexName);
+    // Create the mappings for the index.  Define the location field.
+    elasticsearch.createIndex(indexName, {
+      mappings: {
+        page: {
+          "_all": { "enabled": false },
+          properties: {
+            title: { type: "string" },
+            location: { type: "geo_point" }
+          }
+        }
+      }
+    }, callback);
+  }
+
+  // Load data into the index.
+  function loadIndex(callback) {
+    console.log("loading index", indexName);
+    db.collection.find({
+      "content.geo": { "$exists": 1 }
+    }, {
+      uri: 1,
+      title: 1,
+      content: 1
+    }, function(err, cursor) {
+      if (err) {
+        app.abort("mongo query failed", err);
+      }
+      (function next() {
+        cursor.nextObject(function(err, item) {
+          if (err) {
+            app.abort("mongdo cursor failed", err);
+          }
+          else if (!item) {
+            callback();
+          }
+          else {
+            console.log("insert", item.uri);
+            elasticsearch.insert(indexName, {
+              "uri": item.uri,
+              "title": item.content.title,
+              "location": [ item.content.geo.longitude, item.content.geo.latitude ]     // careful - reverse the order!
+            }, next);
+          }
+        });
+      })();
+    });
+  }
+
+  app.executeSequence([
+    nextAvailableIndexName,
+    createIndex,
+    loadIndex
+  ], function() {
+    app.exit(0);
+  });
+});
 
 // QUERY like this.
+/***
 function filterDat() {
   var distanceUnits = [ "mi", "yd", "ft", "in", "km", "m", "cm", "mm", "nmi ];
   return {
@@ -49,5 +105,4 @@ function filterDat() {
     }
   };
 }
-
-// When swapping indexes, delete the old one like this...
+***/

@@ -10,6 +10,8 @@ Redis  http://redis.io/download    tested using version 2.6   latest is 3.0
 
 MongoDB    tested using 3.0.8
 
+ElasticSearch  2.1.1
+
 ## Architecture ##
 
 Data components
@@ -40,8 +42,6 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Is scraper following redirects (no 301s in db)?
-  - Fix scrape queueing - avoid rescraping.
   - Build an ElasticSearch index.
 
 1: (Crawler)

@@ -34,7 +34,7 @@ module.exports = function(params) {
     crawlerQueue: (function() {
       return {
         prefix: "cq",
-        concurrency: 1,
+        concurrency: 3,
         redis: {
           host: "localhost",
           port: 6379,
@@ -74,6 +74,12 @@ module.exports = function(params) {
           collection: site,
           controlCollection: "control"
         }
+      };
+    })(),
+
+    elasticsearch: (function() {
+      return {
+        url: "http://localhost:9200"
       };
     })(),
 

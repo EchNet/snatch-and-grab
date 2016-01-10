@@ -34,7 +34,7 @@ module.exports = function(params) {
     crawlerQueue: (function() {
       return {
         prefix: "cq",
-        concurrency: 3,
+        concurrency: 5,
         redis: {
           host: "localhost",
           port: 6379,

@@ -1,7 +1,5 @@
 /* crawler.js */
 
-var version = "0.1.1.10";
-
 var request = require("request");
 
 var App = require("./app").App;
@@ -14,6 +12,7 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
   var timeout = app.config.request.timeout;
   var crawlText = app.config.site.crawlText;
 
+  // Issue a Web page request.
   function doRequest(uri, callback) {
     var url = host + uri;
     request({
@@ -23,6 +22,29 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     }, callback);
   }
 
+  // Insert document for given URI, if one doesn't already exist.
+  function upsert(uri, proceed) {
+    db.collection.update({
+      uri: uri
+    }, {
+      "$setOnInsert": { 
+        uri: uri,
+        created_at: new Date()
+      }
+    }, {
+      upsert: true
+    }, function(err, result) {
+      if (err) {
+        app.abort("database down?", err);
+      }
+      else if (result.result.nModified == 0) {
+        console.log("added", uri);
+      }
+      proceed();
+    });
+  }
+
+  // Handle Web page response.
   function handleValidResponse(uri, text) {
     var updateTasks = [];
     crawlText(text, {
@@ -33,22 +55,7 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
       },
       recognize: function(hrefUri) {
         updateTasks.push(function(proceed) {
-          db.collection.findOne({
-            uri: hrefUri
-          }, function(err, result) {
-            if (result) {
-              //console.log(hrefUri, "already counted");
-              proceed();
-            }
-            else {
-              console.log(hrefUri, "counted");
-              db.collection.insertOne({
-                uri: hrefUri,
-                created_at: new Date(),
-                crawler_version: version
-              }, null, proceed);
-            }
-          });
+          upsert(hrefUri, proceed);
         });
       }
     });

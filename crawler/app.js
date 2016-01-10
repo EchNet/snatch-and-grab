@@ -21,41 +21,25 @@ function executeSequence(sequence, done) {
 //
 function seedDatabase(app) {
 
-  function openDatabase(service, callback) {
-    var MongoClient = require("mongodb").MongoClient;
-    var conf = app.config.database.mongo;
-    var url = "mongodb://" + conf.host + ":" + conf.port + "/" + conf.database;
-    console.log("Connecting to " + url + "...");
-    MongoClient.connect(url, function(err, db) {
-      if (err) {
-        app.abort("database error", err);
-      }
-      else {
-        var collection = db.collection(conf.collection);
-        var controlCollection = db.collection(conf.controlCollection);
-        var wrapper = {
-          db: db,
-          collection: collection,
-          controlCollection: controlCollection
-        };
-        service.wrapper = wrapper;
-        callback(wrapper);
-      }
-    });
-  }
-
   return {
     open: function(callback) {
-      if (this.wrapper) {
-        callback(this.wrapper);
+      if (this.database) {
+        callback(this.database);
       }
       else {
-        openDatabase(this, callback);
+        var database = require("./database"); 
+        database.open(app.config.database.mongo, function(err) {
+          if (err) {
+            app.abort("database error", err);
+          }
+          this.database = database;
+          callback(database);
+        });
       }
     },
     close: function(callback) {
-      if (this.db) {
-        this.db.close(callback);
+      if (this.database) {
+        database.close(callback);
       }
       else {
         callback();

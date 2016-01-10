@@ -206,60 +206,12 @@ function seedChecklist(app) {
 // ElasticSearch connector.
 //
 function seedElasticSearch(app) { 
-
-  function openElasticSearch(callback) {
-    console.log("Initializing ElasticSearch client...");
-
-    var request = require("request");
-    var url = app.config.elasticsearch.url;
-    var timeout = app.config.request.timeout;
-
-    callback({
-      listIndexes: function(callback) {
-        request({
-          url: url + "/_cat/indices?v",
-          timeout: timeout
-        }, function(err, response, text) {
-          if (err) {
-            app.abort("ES request error", err);
-          }
-          else {
-            callback(text.split(" "));
-          }
-        });
-      },
-      createIndex: function(indexName, config, callback) {
-        request({
-          method: "PUT",
-          url: url + "/" + indexName,
-          json: config
-        }, function(err, response, text) {
-          if (err) {
-            app.abort("ES create index error", err);
-          }
-          console.log(text);
-          callback();
-        });
-      },
-      insert: function(indexName, docType, doc, callback) {
-        request({
-          method: "POST",
-          url: url + "/" + indexName + "/" + docType + "/",
-          json: doc
-        }, function(err, response, text) {
-          if (err) {
-            app.abort("ES insert error", err);
-          }
-          console.log(text);
-          callback();
-        });
-      }
-    });
-  }
-
   return {
     open: function(callback) {
-      openElasticSearch(callback);
+      var es = require("./es");
+      callback(es.openElasticSearch(app.config.elasticsearch, function(msg, err) {
+        app.abort(msg, err);
+      }));
     },
     close: function(callback) {
       callback();

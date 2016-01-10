@@ -13,12 +13,13 @@ var docType = "page";
 app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
 
   var indexName;
+  var indexCount = 0;
 
   // Find the next available index name
   function nextAvailableIndexName(callback) {
     elasticsearch.listIndexes(function(indexes) {
       for (var n = 0; ; ++n) {
-        var name = "pages" + n;
+        var name = docType + "s" + n;
         if (indexes.indexOf(name) < 0) {
           indexName = name;
           break;
@@ -68,7 +69,8 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
           }
           else {
             console.log("insert", item.uri);
-            elasticsearch.insert(indexName, {
+            ++indexCount;
+            elasticsearch.insert(indexName, docType, {
               "uri": item.uri,
               "title": item.content.title,
               "location": [ item.content.geo.longitude, item.content.geo.latitude ]     // careful - reverse the order!
@@ -84,6 +86,7 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
     createIndex,
     loadIndex
   ], function() {
+    console.log("Indexed items:", indexCount);
     app.exit(0);
   });
 });

@@ -8,7 +8,7 @@ var site = app.config.params.site;
 var scrapeFreshnessTime = app.config.control.scrapeFreshnessTime;
 var scrapesPerQuantum = app.config.control.scrapesPerQuantum;
 
-app.open([ "db", "scraperQueue" ], function(db, scraperQueue) {
+app.open([ "db", "scraperQueue" ], function(db, queue) {
 
   function appendUris(cursor, uris, callback) {
     if (cursor) {
@@ -55,7 +55,7 @@ app.open([ "db", "scraperQueue" ], function(db, scraperQueue) {
 
     app.executeSequence([
       function(done) {
-        scraperQueue.inactiveCount(function(err, total) {
+        queue.inactiveCount(function(err, total) {
           if (err) {
             console.log("error accessing scraper queue", err);
           }
@@ -87,10 +87,17 @@ app.open([ "db", "scraperQueue" ], function(db, scraperQueue) {
     ], function() {
       app.executeSequence(uris.map(function(uri) {
         return function(done) {
-          scraperQueue.enqueue(uri, done);
+          queue.enqueue(uri, done);
         };
       }));
     });
+  }
+
+  if (app.args.clear) {
+    queue.clear();
+  }
+  else {
+    queue.restartJobs();
   }
 
   setInterval(work, app.config.control.quantum);

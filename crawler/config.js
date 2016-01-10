@@ -71,8 +71,7 @@ module.exports = function(params) {
           host: env == "dev" ? "localhost" : "db.whwh.fyi",
           port: 27017,
           database: "local",
-          collection: site,
-          controlCollection: "control"
+          collection: site
         }
       };
     })(),
@@ -90,9 +89,8 @@ module.exports = function(params) {
       var day = hour * 24;
       return {
         quantum: minute,
-        scrapesPerQuantum: env == "dev" ? 250 : 2500,
-        scrapeFreshnessTime: env == "dev" ? minute : day,
-        crawlInterval: env == "dev" ? minute : day
+        scrapesPerQuantum: env == "dev" ? 500 : 5000,
+        scrapeFreshnessTime: env == "dev" ? hour : day
       };
     })()
   };

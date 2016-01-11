@@ -264,7 +264,12 @@ function exit(app, status) {
 }
 
 function abort(app, msg, error) {
-  console.log(msg, error);
+  if (error) {
+    console.log(msg, error);
+  }
+  else {
+    console.log(msg);
+  }
   exit(app, 1);
 }
 

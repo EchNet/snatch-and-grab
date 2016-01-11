@@ -52,6 +52,29 @@ function openElasticSearch(config, errorHandler) {
           callback();
         }
       });
+    },
+    geoFilter(indexName, docType, location, distance, callback) {
+      var dat_url = url + "/" + indexName + "/" + docType + "/_search";
+  console.log(dat_url);
+      request({
+        method: "GET",
+        url: url + "/" + indexName + "/" + docType + "/_search",
+        json: {
+          "bool": {
+            "must": {
+              "match_all": {}
+            },
+            "filter": {
+              "geo_distance": {
+                "distance": distance,
+                "content.geo.location": location
+              }
+            }
+          }
+        }
+      }, function(err, response, text) {
+        callback(text);
+      });
     }
   };
 }

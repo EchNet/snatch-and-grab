@@ -1,7 +1,5 @@
 /* indexer.js */
 
-var version = "0.1.1";
-
 var request = require("request");
 
 var App = require("./app").App;
@@ -90,22 +88,3 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
     app.exit(0);
   });
 });
-
-// QUERY like this.
-/***
-function filterDat() {
-  var distanceUnits = [ "mi", "yd", "ft", "in", "km", "m", "cm", "mm", "nmi ];
-  return {
-    "query": {
-      "filtered": {
-        "filter": {
-          "geo_distance": {
-            "distance": "1km",
-            "location": [ -73.988, 40.715 ]
-          }
-        }
-      }
-    }
-  };
-}
-***/

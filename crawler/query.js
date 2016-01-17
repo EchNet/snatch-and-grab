@@ -1,4 +1,4 @@
-/* indexer.js */
+/* query.js */
 
 var request = require("request");
 
@@ -29,14 +29,11 @@ app.open([ "elasticsearch" ], function(elasticsearch) {
 
     (function filter() {
       elasticsearch.geoFilter(indexName, docType, location, radii[rx++], function(results) {
-        if (results) {
-        //if (results && results.length) {
-          console.log("Results");
-          console.log("-------");
-          //for (var i = 0; i < results.length; ++i) {
-            //console.log(results[i]);
-          //}
-          console.log(results);
+        if (results.hits && results.hits.hits) {
+          console.log("Results", "(" + results.hits.total + ")");
+          for (var i = 0; i < results.hits.hits.length; ++i) {
+            console.log(" ", app.config.site.host + results.hits.hits[i]._source.uri);
+          }
           callback();
         }
         else {

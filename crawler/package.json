@@ -8,6 +8,7 @@
     "kue": "~0.10.4",
     "redis": "*",
     "mongodb": "*",
+    "elasticsearch": "*",
     "xmldom": "*",
     "yargs": "*",
     "extend": "*",

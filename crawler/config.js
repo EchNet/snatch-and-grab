@@ -78,7 +78,12 @@ module.exports = function(params) {
 
     elasticsearch: (function() {
       return {
-        url: "http://localhost:9200"
+        host: "localhost:9200",
+        log: {
+          level: "trace",
+          type: "file",
+          path: "../logs/elasticsearch.log"
+        }
       };
     })(),
 

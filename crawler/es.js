@@ -1,18 +1,18 @@
 /* es.js */
 
+var elasticsearch = require("elasticsearch");
 var request = require("request");
 
 function openElasticSearch(config, errorHandler) {
   console.log("Initializing ElasticSearch client...");
 
-  var url = config.url;
-  var timeout = config.timeout;
+  var url = "http://" + config.host;
+  var client = new elasticsearch.Client(config);
 
   return {
     listIndexes: function(callback) {
       request({
-        url: url + "/_cat/indices?v",
-        timeout: timeout
+        url: url + "/_cat/indices?v"
       }, function(err, response, text) {
         if (err) {
           errorHandler("ES request error", err);
@@ -54,26 +54,53 @@ function openElasticSearch(config, errorHandler) {
       });
     },
     geoFilter(indexName, docType, location, distance, callback) {
-      var dat_url = url + "/" + indexName + "/" + docType + "/_search";
-  console.log(dat_url);
-      request({
-        method: "GET",
-        url: url + "/" + indexName + "/" + docType + "/_search",
-        json: {
-          "bool": {
-            "must": {
-              "match_all": {}
-            },
-            "filter": {
-              "geo_distance": {
-                "distance": distance,
-                "content.geo.location": location
+      client.search({
+        index: indexName,
+        type: docType,
+        body: {
+          "size": 10,
+          "query": {
+            "bool": {
+              "must": {
+                "match_all": {}
+              },
+              "filter": {
+                "geo_distance": {
+                  "distance": "20km",
+                  "location": location
+                }
               }
             }
           }
         }
-      }, function(err, response, text) {
-        callback(text);
+      }).then(callback, function(err) {
+        console.log(err);
+      });
+    },
+    geoFilter2(indexName, docType, location, distance, callback) {
+      client.search({
+        index: indexName,
+        type: docType,
+        body: {
+          "size": 10,
+          "query": {
+            "function_score": {
+              "functions": [
+                {
+                  "linear": {
+                    "location": {
+                      "origin": { lon: -7.6 , lat: 52.3 },
+                      "offset": "100m",
+                      "scale": "100m"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }).then(callback, function(err) {
+        console.log(err);
       });
     }
   };

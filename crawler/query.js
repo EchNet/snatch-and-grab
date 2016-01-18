@@ -1,7 +1,5 @@
 /* query.js */
 
-var request = require("request");
-
 var App = require("./app").App;
 
 var app = new App("query");
@@ -23,16 +21,20 @@ app.open([ "elasticsearch" ], function(elasticsearch) {
 
   // Load data into the index.
   function query(callback) {
-    var location = [ longitude, latitude ];
-    var radii = [ "10m", "30m", "90m", "270m", "810m" ];
+    var location = { lon: longitude, lat: latitude };
     var rx = 0;
 
     (function filter() {
-      elasticsearch.geoFilter(indexName, docType, location, radii[rx++], function(results) {
+      elasticsearch.geoFilter(indexName, docType, location, function(results) {
         if (results.hits && results.hits.hits) {
           console.log("Results", "(" + results.hits.total + ")");
           for (var i = 0; i < results.hits.hits.length; ++i) {
-            console.log(" ", app.config.site.host + results.hits.hits[i]._source.uri);
+            var hit = results.hits.hits[i];
+            console.log("---");
+            console.log(" ", "url:", app.config.site.host + hit._source.uri);
+            console.log(" ", "title:", hit._source.title);
+            console.log(" ", "location:", hit._source.location);
+            console.log(" ", "score:", hit._score);
           }
           callback();
         }

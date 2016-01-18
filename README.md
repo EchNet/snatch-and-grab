@@ -22,10 +22,10 @@ Data components
 - ElasticSearch for search
 
 Functional components
-- Crawler   (NodeJS)
-- Scraper   (NodeJS)
-- Master Control  (NodeJS)
-- Query   (??)
+- Crawler   (NodeJS / MongoDB)
+- Scraper   (NodeJS / MongoDB)
+- Indexer (NodeJS / MongoDB / ElasticSearch)
+- Query   (NodeJS / ElasticSearch)
 - UI   (plain jQuery)
 
 Configuration:
@@ -42,7 +42,7 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Build an ElasticSearch index.
+  - Add an ExpressJS server
 
 1: (Crawler)
   Create a list of all of the articles in Wikipedia.
@@ -62,9 +62,14 @@ Operations
 3: (Indexer)
   Create a search index from the scraped content.
   Search engine answers the question "what's closest?"
+  Type of page is taken into account: city, monument, radio station, incident
   The search engine lives in the cloud.
 
 4: (Query)
+  API server queries ElasticSearch
   Treat regions differently from points of interest
-  UI design
 
+5: (UI)
+  Use geo if available, web service if not.
+  show up to N matches
+  vary presentation for clustering factors

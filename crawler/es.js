@@ -53,31 +53,7 @@ function openElasticSearch(config, errorHandler) {
         }
       });
     },
-    geoFilter(indexName, docType, location, distance, callback) {
-      client.search({
-        index: indexName,
-        type: docType,
-        body: {
-          "size": 10,
-          "query": {
-            "bool": {
-              "must": {
-                "match_all": {}
-              },
-              "filter": {
-                "geo_distance": {
-                  "distance": "20km",
-                  "location": location
-                }
-              }
-            }
-          }
-        }
-      }).then(callback, function(err) {
-        console.log(err);
-      });
-    },
-    geoFilter2(indexName, docType, location, distance, callback) {
+    geoFilter(indexName, docType, location, callback) {
       client.search({
         index: indexName,
         type: docType,
@@ -87,11 +63,10 @@ function openElasticSearch(config, errorHandler) {
             "function_score": {
               "functions": [
                 {
-                  "linear": {
+                  "gauss": {
                     "location": {
-                      "origin": { lon: -7.6 , lat: 52.3 },
-                      "offset": "100m",
-                      "scale": "100m"
+                      origin: location,
+                      scale: "5km"
                     }
                   }
                 }

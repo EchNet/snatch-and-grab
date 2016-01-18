@@ -75,6 +75,7 @@ function openElasticSearch(config, errorHandler) {
           }
         }
       }).then(callback, function(err) {
+        // TODO: report error to client
         console.log(err);
       });
     }

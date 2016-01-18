@@ -13,7 +13,8 @@
     "yargs": "*",
     "extend": "*",
     "request": "*",
-    "html-entities": "*"
+    "html-entities": "*",
+    "express": "*"
   },
   "devDependencies": {}
 }

@@ -220,6 +220,20 @@ function seedElasticSearch(app) {
 }
 
 //
+// System configuration connector.
+//
+function seedSystem() { 
+  return {
+    open: function(callback) {
+      callback({ index: "pages0" });
+    },
+    close: function(callback) {
+      callback();
+    }
+  };
+}
+
+//
 // App services management.
 //
 
@@ -292,7 +306,8 @@ function App(component) {
     db: seedDatabase(self),
     crawlerQueue: seedWorkQueue(self, "crawlerQueue"),
     scraperQueue: seedWorkQueue(self, "scraperQueue"),
-    elasticsearch: seedElasticSearch(self)
+    elasticsearch: seedElasticSearch(self),
+    system: seedSystem()
   };
 
   self.executeSequence = executeSequence;

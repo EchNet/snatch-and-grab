@@ -24,6 +24,10 @@ module.exports = function(params) {
 
     site: require("./" + site + ".js"),
 
+    web: {
+      port: 3300
+    },
+
     request: (function() {
       return {
         request: {

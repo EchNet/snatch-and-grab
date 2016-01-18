@@ -2,7 +2,7 @@
 
 Crawl a Web site.  Take what we want, discard the rest.  Build a search index.
 
-## Install Base Software ##
+## Base Software ##
 
 NodeJS 5.2.0 and NPM
 
@@ -42,7 +42,9 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Add an ExpressJS server
+  - Add a UI
+  - Get it ready for deployment
+  - Deploy it.
 
 1: (Crawler)
   Create a list of all of the articles in Wikipedia.
@@ -51,6 +53,7 @@ Operations
   As the software is improved, the quality of the list improves.
   The data lives in the cloud.
   The crawler runs in the cloud.
+  Support multiple languages
 
 2: (Scraper)
   Extract content for each article in the list.
@@ -58,18 +61,22 @@ Operations
   Pages that go dead are eventually removed from the index.
   As the software is improved, the quality of the content improves.
   The scraper runs in the cloud.
+  Support multiple languages
 
 3: (Indexer)
   Create a search index from the scraped content.
   Search engine answers the question "what's closest?"
   Type of page is taken into account: city, monument, radio station, incident
   The search engine lives in the cloud.
+  Support multiple languages
 
 4: (Query)
   API server queries ElasticSearch
   Treat regions differently from points of interest
+  Support multiple languages
 
 5: (UI)
   Use geo if available, web service if not.
   show up to N matches
   vary presentation for clustering factors
+  support multiple languages

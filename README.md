@@ -48,32 +48,33 @@ Operations
 
 1: (Crawler)
   Create a list of all of the articles in Wikipedia.
-    - Result is a MongoDB collection
+  Crawler runs steadily and doesn't get stuck.
+  Crawler is always non-destructive.
   As new articles are added, they appear on the list regularly.
-  As the software is improved, the quality of the list improves.
-  The data lives in the cloud.
-  The crawler runs in the cloud.
-  Support multiple languages
+  Crawler and its data are deployed in the cloud.
+  Crawler supports multiple languages
 
 2: (Scraper)
-  Extract content for each article in the list.
-  Content remains fresh, within a set time period.
-  Pages that go dead are eventually removed from the index.
-  As the software is improved, the quality of the content improves.
-  The scraper runs in the cloud.
-  Support multiple languages
+  Scraper is fed by the output of the crawler.
+  Scraper extracts content for each unscraped article.
+  Scraper re-extracts content for each article that is no longer "fresh".
+  Scraper runs steadily and doesn't get stuck.
+  Pages that go dead are eventually have their content removed from the database.
+  Scraper and its data are deployed in the cloud.
+  Scraper supports multiple languages
 
 3: (Indexer)
   Create a search index from the scraped content.
-  Search engine answers the question "what's closest?"
-  Type of page is taken into account: city, monument, radio station, incident
-  The search engine lives in the cloud.
-  Support multiple languages
+  Search engine schema supports geo queries.
+  Indexer records general type of article: city, monument, radio station, incident
+  Indexer and search engine are deployed to the cloud.
+  Indexer creates one index per language.
 
 4: (Query)
-  API server queries ElasticSearch
-  Treat regions differently from points of interest
-  Support multiple languages
+  API server queries ElasticSearch for closest points of interest
+  Regions are also shown in some cases.
+  Distance and direction are shown for each
+  Query takes language parameter.
 
 5: (UI)
   Use geo if available, web service if not.

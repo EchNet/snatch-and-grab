@@ -26,7 +26,7 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
         done();
       }
       else {
-        console.log("request", uri);
+        var priorContent = record.content;
         request({
           url: host + uri,
           timeout: timeout,
@@ -40,12 +40,24 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
             record.http_status = response.statusCode;
             record.updated_at = new Date();
             record.scraper_version = version;
-            record.content = null;
+            if (response.statusCode >= 300 && response.statusCode < 500) {
+              record.content = null;
+            }
             if (response.statusCode == 200 &&
                 response.headers["content-type"] == "text/html; charset=UTF-8") {
-              console.log("scrape", uri);
               record.content = scrapeText(text);
             }
+            console.log(uri, response.statusCode, (function() {
+              if (record.content && !priorContent) {
+                return record.content.geo ? "first scrape - GEO" : "first scrape";
+              }
+              else if (record.content && priorContent) {
+                return (record.content.geo && !priorContent.geo) ? "rescrape - GEO" : "rescrape";
+              }
+              else {
+                return priorContent ? "content discarded" : "";
+              }
+            })());
             db.collection.update({ uri: uri }, record, done);
           }
         });

@@ -196,6 +196,7 @@ function seedChecklist(app) {
     close: function(callback) {
       if (this.redisClient) {
         this.redisClient.quit();
+        this.redisClient = null;
       }
       callback();
     }
@@ -209,11 +210,15 @@ function seedElasticSearch(app) {
   return {
     open: function(callback) {
       var es = require("./es");
-      callback(es.openElasticSearch(app.config.elasticsearch, function(msg, err) {
-        app.abort(msg, err);
-      }));
+      if (!this.wrapper) {
+        this.wrapper = es.openElasticSearch(app.config.elasticsearch, function(msg, err) {
+          app.abort(msg, err);
+        });
+      }
+      callback(this.wrapper);
     },
     close: function(callback) {
+      this.wrapper = null;
       callback();
     }
   };

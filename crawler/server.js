@@ -37,6 +37,7 @@ server.get("/whwh", function (req, res) {
         ok((function() {
           if (results.hits && results.hits.hits) {
             return results.hits.hits.map(function(hit) {
+              if (hit._score == 0) return undefined;
               return {
                 url: app.config.site.host + hit._source.uri,
                 title: hit._source.title,

@@ -42,9 +42,10 @@ Operations
 
 0: (Prototype)
   Get the whole thing working end to end in some form.
-  - Add a UI
-  - Get it ready for deployment
-  - Deploy it.
+  - Why does scraper control sometimes rescrape when there are unscraped?
+  - Write "start all" script
+  - Deploy the data.
+  - Deploy the server.
 
 1: (Crawler)
   Create a list of all of the articles in Wikipedia.

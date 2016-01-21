@@ -9,6 +9,7 @@ var app = new App("crawler");
 app.open([ "crawlerQueue", "db" ], function(queue, db) {
 
   var host = app.config.site.host;
+  var originUri = app.config.site.origin;
   var timeout = app.config.request.timeout;
   var crawlText = app.config.site.crawlText;
 
@@ -37,8 +38,8 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
       if (err) {
         app.abort("database down?", err);
       }
-      else if (result.result.nModified == 0) {
-        console.log("added", uri);
+      else if (result.result.upserted) {
+        console.log(uri, "upserted");
       }
       proceed();
     });
@@ -50,7 +51,12 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     crawlText(text, {
       crawl: function(hrefUri) {
         updateTasks.push(function(proceed) {
-          queue.enqueue(hrefUri, proceed);
+          if (!app.args.cripple) {
+            queue.enqueue(hrefUri, proceed);
+          }
+          else {
+            proceed();
+          }
         });
       },
       recognize: function(hrefUri) {
@@ -92,25 +98,37 @@ app.open([ "crawlerQueue", "db" ], function(queue, db) {
     queue.process(work);
   }
 
-  function prime(cont) {
-    queue.enqueue(app.config.site.origin);
+  function keepCrawling() {
+    queue.ifEmpty(function() {
+      queue.enqueue(originUri);
+    });
   }
 
-  function keepPrimed() {
-    queue.ifEmpty(prime);
+  function reap() {
+    queue.ifEmpty(function() {
+      app.exit(0);
+    });
   }
 
   if (app.args.restart) {
-    console.log("restarting");
-    queue.clear(function() {
-      prime();
-      process();
-    });
+    (function() {
+      var restartUri = (typeof app.args.restart == "string") ? app.args.restart : originUri;
+      console.log("restarting from", restartUri);
+      queue.clear(function() { queue.enqueue(restartUri, process); });
+    })();
   }
   else {
-    queue.restartJobs();
-    process();
+    // Continue any jobs that were left by the previous run.
+    queue.restartJobs(process);
   }
 
-  setInterval(keepPrimed, app.config.control.crawlInterval);
+  if (app.args.repeat) {
+    // Start up new crawls at regular intervals.
+    setInterval(keepCrawling, app.config.control.recrawlInterval);
+  }
+  else {
+    // Reap a dead crawl process.
+    setInterval(reap, app.config.control.crawlReaperInterval);
+  }
+
 });

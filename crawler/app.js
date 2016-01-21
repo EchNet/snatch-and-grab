@@ -230,7 +230,7 @@ function seedElasticSearch(app) {
 function seedSystem() { 
   return {
     open: function(callback) {
-      callback({ index: "pages0" });
+      callback({ index: "pages1" });
     },
     close: function(callback) {
       callback();

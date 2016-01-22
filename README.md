@@ -1,84 +1,75 @@
-# snatch-and-grab #
+# What Have We Here? #
 
-Crawl a Web site.  Take what we want, discard the rest.  Build a search index.
+Crawl a Web site and build a geographical search index.
+
+Version 1.0 crawls only the Wikipedia sites (en.wikipedia.com, it.wikipedia.com, ...)!
 
 ## Base Software ##
 
-NodeJS 5.2.0 and NPM
+Platform: NodeJS 5.2.0 and NPM
 
-Redis  http://redis.io/download    tested using version 2.6   latest is 3.0
+Redis (for queueing)  [http://redis.io/download](http://redis.io/download)
+ - tested using version 2.6  
+ - latest is 3.0
 
-MongoDB    tested using 3.0.8
+MongoDB (for persistence of scraped data) 
+ - tested using 3.0.8
 
-ElasticSearch  2.1.1
+ElasticSearch (for geo-search)  2.1.1
 
-## Architecture ##
+## Functional components ##
 
-Data components
-- Redis for queueing 
-- MongoDB for database
-    - Indexed by URI
-    - Indexed by last update time
-- ElasticSearch for search
+Crawler
+ - Register the URLs of the target pages (articles) on the site (wikipedia) in the scraper data store.
 
-Functional components
-- Crawler   (NodeJS / MongoDB)
-- Scraper   (NodeJS / MongoDB)
-- Indexer (NodeJS / MongoDB / ElasticSearch)
-- Query   (NodeJS / ElasticSearch)
-- UI   (plain jQuery)
+Scraper
+  - Scraper is fed by the output of the crawler.
+  - Scraper extracts content for each unscraped article.
 
-Configuration:
-- installed NodeJS modules
+Indexer
+  - Create a search index from the scraped content.
+  - Search index supports geo queries.
 
-Deployment
-- ???
+Server
+  - Queries the search index for closest points of interest
+  - Offers admin queries
 
-Operations
-- Logging ... want access to detailed logs
-- Error tracking and response
+UI 
+  - Web page, using navigator.geolocation if available, manual input if not.
+  - Shows best matches
 
 ## Development Plan ##
 
-0: (Prototype)
+0: Prototype
   Get the whole thing working end to end in some form.
   - Why does scraper control sometimes rescrape when there are unscraped?
-  - Write "start all" script
-  - Deploy the data.
-  - Deploy the server.
+  - Get to a minimal deployment.
+  - Test in the field!
 
-1: (Crawler)
-  Create a list of all of the articles in Wikipedia.
+1: Refine the Crawler
   Crawler runs steadily and doesn't get stuck.
   Crawler is always non-destructive.
   As new articles are added, they appear on the list regularly.
   Crawler and its data are deployed in the cloud.
   Crawler supports multiple languages
 
-2: (Scraper)
-  Scraper is fed by the output of the crawler.
-  Scraper extracts content for each unscraped article.
+2: Refine the Scraper
   Scraper re-extracts content for each article that is no longer "fresh".
   Scraper runs steadily and doesn't get stuck.
   Pages that go dead are eventually have their content removed from the database.
   Scraper and its data are deployed in the cloud.
   Scraper supports multiple languages
 
-3: (Indexer)
-  Create a search index from the scraped content.
-  Search engine schema supports geo queries.
+3: Refine the Indexer
   Indexer records general type of article: city, monument, radio station, incident
   Indexer and search engine are deployed to the cloud.
   Indexer creates one index per language.
 
-4: (Query)
-  API server queries ElasticSearch for closest points of interest
+4: Refine the server
   Regions are also shown in some cases.
   Distance and direction are shown for each
   Query takes language parameter.
 
-5: (UI)
-  Use geo if available, web service if not.
-  show up to N matches
+5: Refine the UI
   vary presentation for clustering factors
   support multiple languages

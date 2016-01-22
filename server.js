@@ -7,7 +7,7 @@ var app = new App("server");
 
 var server = express();
 
-server.use(express.static("../www"));
+server.use(express.static("www"));
 
 server.get("/whwh", function (req, res) {
 

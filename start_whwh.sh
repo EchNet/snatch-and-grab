@@ -19,8 +19,9 @@ echo "Starting up MongoDB..."
 $MONGOD --fork --port $MONGO_PORT --dbpath=data --logpath=logs/mongodb.log
 
 # echo "Starting up NodeJS processes..."
-# (cd crawler; $NODE crawler.js --env=dev --site=test >>../logs/crawler.log ) &
-# (cd crawler; $NODE scraper.js --env=dev --site=test >>../logs/scraper.log ) &
-# (cd crawler; $NODE master.js --env=dev --site=test >>../logs/master.log ) &
+# $NODE crawler.js --env=dev --site=test >>logs/crawler.log &
+# $NODE scraper.js --env=dev --site=test >>logs/scraper.log &
+# $NODE scrape_control.js --env=dev --site=test >>logs/scraper.log &
+# $NODE master.js --env=dev --site=test >>logs/master.log &
 
 $ELASTICSEARCH -d -p data/elasticsearch.pid

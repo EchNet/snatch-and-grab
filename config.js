@@ -86,7 +86,7 @@ module.exports = function(params) {
         log: {
           level: "trace",
           type: "file",
-          path: "../logs/elasticsearch.log"
+          path: "logs/elasticsearch.log"
         }
       };
     })(),

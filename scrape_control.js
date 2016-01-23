@@ -6,7 +6,7 @@ var app = new App("scrape_control");
 
 var site = app.config.params.site;
 var scrapeFreshnessTime = app.config.control.scrapeFreshnessTime;
-var scrapesPerQuantum = app.config.control.scrapesPerQuantum;
+var scrapesPerQuantum;
 
 app.open([ "db", "scraperQueue" ], function(db, queue) {
 
@@ -50,7 +50,7 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
   }
 
   function work() {
-    var max = scrapesPerQuantum;
+    var max;
     var uris = [];
 
     app.executeSequence([
@@ -61,6 +61,14 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
           }
           else {
             console.log("waiting scrape jobs", total);
+            if (total == 0 && scrapesPerQuantum) {
+              // As long as scraper keeps up, increase the rate by 20%. 
+              scrapesPerQuantum = Math.round(scrapesPerQuantum * 1.2);
+            }
+            else if (!scrapesPerQuantum) {
+              scrapesPerQuantum = 80;
+            }
+            max = scrapesPerQuantum;
             max -= Math.min(max, total);
           }
           done();
@@ -71,7 +79,7 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
           done();
         }
         else {
-          console.log("fetching unscraped");
+          console.log("fetching unscraped, max", max);
           getUnscrapedUris(uris, max, done);
         }
       },
@@ -80,7 +88,7 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
           done();
         }
         else {
-          console.log("fetching stale");
+          console.log("fetching stale, max", max);
           getStaleUris(uris, max, done);
         }
       },

@@ -72,7 +72,7 @@ function seedWorkQueue(app, which) {
       if (ids) {
         ids.forEach(function(id) {
           kue.Job.get(id, function(err, job) {
-            job.remove();
+            if (job) job.remove();
           });
         });
       }

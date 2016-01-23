@@ -14,6 +14,6 @@ $NODE crawler.js >>logs/crawler.log &
 echo "Starting up scraper..."
 $NODE scraper.js >>logs/scraper.log &
 echo "Starting up scrape_control..."
-$NODE scrape_control.js >>logs/scraper.log &
+$NODE scrape_control.js >>logs/scrape_control.log &
 echo "Starting up server..."
 $NODE server.js >>logs/server.log &

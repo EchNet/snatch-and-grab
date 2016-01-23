@@ -68,6 +68,9 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
             else if (!scrapesPerQuantum) {
               scrapesPerQuantum = 80;
             }
+            else if (scrapesPerQuantum > total/2) {
+              scrapesPerQuantum -= Math.floor(total/2);
+            }
             max = scrapesPerQuantum;
             max -= Math.min(max, total);
           }

@@ -40,22 +40,25 @@ UI
 
 ## Development Plan ##
 
-0: Prototype
-  Get the whole thing working end to end in some form.
-  - Why does scraper control sometimes rescrape when there are unscraped?
-  - Get to a minimal deployment.
-  - Test in the field!
+0: Get to practicality
+  - Logging
+  - Server Operations
+  - Reduced data size
+  - Sort by distance
 
 1: Refine the Crawler
-  Crawler runs steadily and doesn't get stuck.
-  Crawler is always non-destructive.
-  As new articles are added, they appear on the list regularly.
-  Crawler and its data are deployed in the cloud.
-  Crawler supports multiple languages
+  - Crawler and its data are deployed in the cloud.
+  - Crawler runs on a schedule.
+  - Crawler doesn't get stuck or bogged down with multiple tracks.
+    (Or if it does, there are means for unstucking it)
+  - As new articles are added, they appear on the list regularly.
+  - Crawler supports multiple languages
 
 2: Refine the Scraper
-  Scraper re-extracts content for each article that is no longer "fresh".
+  Scraper control doesn't increase max if fewer than max were caught last time.
+  Scraper control doesn't requeue pages that the scraper simply hasn't caught up to.
   Scraper runs steadily and doesn't get stuck.
+  Scraper re-extracts content for each article that is no longer "fresh".
   Pages that go dead are eventually have their content removed from the database.
   Scraper and its data are deployed in the cloud.
   Scraper supports multiple languages
@@ -72,4 +75,4 @@ UI
 
 5: Refine the UI
   vary presentation for clustering factors
-  support multiple languages
+  Support language setting

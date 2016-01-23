@@ -3,7 +3,11 @@
 var MongoClient = require("mongodb").MongoClient;
 
 function openDatabase(wrapper, conf, callback) {
-  var url = "mongodb://" + conf.host + ":" + conf.port + "/" + conf.database;
+  var url = "mongodb://";
+  if (conf.user) {
+    url += conf.user + ":" + conf.password + "@";
+  }
+  url += conf.host + ":" + conf.port + "/" + conf.database;
   console.log("Connecting to " + url + "...");
   MongoClient.connect(url, function(err, db) {
     if (err) {

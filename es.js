@@ -1,59 +1,87 @@
 /* es.js */
 
 var elasticsearch = require("elasticsearch");
-var request = require("request");
 
 function openElasticSearch(config, errorHandler) {
-  console.log("Initializing ElasticSearch client...");
+  console.log("Initializing ElasticSearch client...", config);
 
-  var url = "http://" + config.host;
   var client = new elasticsearch.Client(config);
 
   return {
     listIndexes: function(callback) {
-      request({
-        url: url + "/_cat/indices?v"
-      }, function(err, response, text) {
+      client.cat.indices({ "v": true }, function(err, response, status) {
         if (err) {
-          errorHandler("ES request error", err);
+          errorHandler("ES cat.indices error", err);
         }
         else {
-          callback(text.split("\n").map(function(item) {
+          var text = response.split("\n");
+          text.shift();  // toss column headers
+          callback(text.map(function(item) {
             var words = item.split(/\s+/);
-            return words.length > 2 ? words[2] : ""
+            return words.length > 2 ? words[2] : "";
           }));
         }
       });
     },
     createIndex: function(indexName, config, callback) {
-      request({
-        method: "PUT",
-        url: url + "/" + indexName,
-        json: config
-      }, function(err, response, text) {
+      client.indices.create({
+        index: indexName,
+        body: config
+      }, function(err, response, status) {
         if (err) {
-          errorHandler("ES create index error", err);
+          errorHandler("ES indices.create error", err);
         }
         else {
-          callback(text);
+          callback(response);
+        }
+      });
+    },
+    dropIndex: function(indexName, callback) {
+      client.indices.delete({
+        index: indexName
+      }, function(err, response, status) {
+        if (err) {
+          errorHandler("ES indices.delete error", err);
+        }
+        else {
+          callback(response);
         }
       });
     },
     insert: function(indexName, docType, doc, callback) {
-      request({
-        method: "POST",
-        url: url + "/" + indexName + "/" + docType + "/",
-        json: doc
-      }, function(err, response, text) {
+      client.create({
+        index: indexName,
+        type: docType,
+        body: doc
+      }, function(err, response, status) {
         if (err) {
-          errorHandler("ES insert error", err);
+          errorHandler("ES client.create error", err);
         }
         else {
-          callback();
+          callback(response);
         }
       });
     },
-    geoFilter(indexName, docType, location, callback) {
+    bulkInsert: function(indexName, docType, docs, callback) {
+      var body = [];
+      for (var i = 0; i < docs.length; ++i) {
+        body.push({ index: {} });
+        body.push(docs[i]);
+      }
+      client.bulk({
+        index: indexName,
+        type: docType,
+        body: body
+      }, function(err, response, status) {
+        if (err) {
+          errorHandler("ES client.bulk error", err);
+        }
+        else {
+          callback(response);
+        }
+      });
+    },
+    geoFilter: function(indexName, docType, location, callback) {
       client.search({
         index: indexName,
         type: docType,

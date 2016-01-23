@@ -21,10 +21,10 @@ function executeSequence(sequence, done) {
 //
 function seedDatabase(app) {
 
-  return {
+  var seed = {
     open: function(callback) {
-      if (this.database) {
-        callback(this.database);
+      if (seed.database) {
+        callback(seed.database);
       }
       else {
         var database = require("./database"); 
@@ -32,13 +32,13 @@ function seedDatabase(app) {
           if (err) {
             app.abort("database error", err);
           }
-          this.database = database;
+          seed.database = database;
           callback(database);
         });
       }
     },
     close: function(callback) {
-      if (this.database) {
+      if (seed.database) {
         database.close(callback);
       }
       else {
@@ -46,6 +46,7 @@ function seedDatabase(app) {
       }
     }
   };
+  return seed;
 }
 
 //
@@ -71,7 +72,7 @@ function seedWorkQueue(app, which) {
       if (ids) {
         ids.forEach(function(id) {
           kue.Job.get(id, function(err, job) {
-            job.remove();
+            if (job) job.remove();
           });
         });
       }
@@ -132,22 +133,23 @@ function seedWorkQueue(app, which) {
     };
   };
 
-  return {
+  var seed = {
     open: function(callback) {
-      if (!this.wrapper) {
-        openWorkQueue(this);
+      if (!seed.wrapper) {
+        openWorkQueue(seed);
       }
-      callback(this.wrapper);
+      callback(seed.wrapper);
     },
     close: function(callback) {
-      if (this.queue) {
-        this.queue.shutdown(5000, callback);
+      if (seed.queue) {
+        seed.queue.shutdown(5000, callback);
       }
       else {
         callback();
       }
     }
   };
+  return seed;
 }
 
 //
@@ -184,44 +186,46 @@ function seedChecklist(app) {
     });
   }
 
-  return {
+  var seed = {
     open: function(callback) {
-      if (this.wrapper) {
-        callback(this.wrapper);
+      if (seed.wrapper) {
+        callback(seed.wrapper);
       }
       else {
-        openChecklist(this, callback);
+        openChecklist(seed, callback);
       }
     },
     close: function(callback) {
-      if (this.redisClient) {
-        this.redisClient.quit();
-        this.redisClient = null;
+      if (seed.redisClient) {
+        seed.redisClient.quit();
+        seed.redisClient = null;
       }
       callback();
     }
   };
+  return seed;
 }
 
 //
 // ElasticSearch connector.
 //
 function seedElasticSearch(app) { 
-  return {
+  var seed = {
     open: function(callback) {
       var es = require("./es");
-      if (!this.wrapper) {
-        this.wrapper = es.openElasticSearch(app.config.elasticsearch, function(msg, err) {
+      if (!seed.wrapper) {
+        seed.wrapper = es.openElasticSearch(app.config.elasticsearch, function(msg, err) {
           app.abort(msg, err);
         });
       }
-      callback(this.wrapper);
+      callback(seed.wrapper);
     },
     close: function(callback) {
-      this.wrapper = null;
+      seed.wrapper = null;
       callback();
     }
   };
+  return seed;
 }
 
 //
@@ -230,7 +234,7 @@ function seedElasticSearch(app) {
 function seedSystem() { 
   return {
     open: function(callback) {
-      callback({ index: "pages1" });
+      callback({ index: "pages0" });
     },
     close: function(callback) {
       callback();

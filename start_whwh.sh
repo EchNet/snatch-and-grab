@@ -1,27 +1,19 @@
 #!/bin/bash
 
 set -e
+set -x
 
-: ${REDISD:="redis-server"}
-: ${MONGOD:="mongod"}
-: ${MONGO_PORT:="27017"}
 : ${NODE:="node"}
-: ${ELASTICSEARCH:="elasticsearch"}
 
-for CMD in $REDISD $MONGOD $NODE $ELASTICSEARCH; do
+for CMD in $NODE; do
   command -v $CMD >/dev/null 2>&1 || { echo "$CMD required but not found.  Aborting."; exit 1; }
 done
 
-echo "Starting up Redis..."
-(cd data; $REDISD >>../logs/$REDISD.log 2>&1 ) &
-
-echo "Starting up MongoDB..."
-$MONGOD --fork --port $MONGO_PORT --dbpath=data --logpath=logs/mongodb.log
-
-# echo "Starting up NodeJS processes..."
-# $NODE crawler.js --env=dev --site=test >>logs/crawler.log &
-# $NODE scraper.js --env=dev --site=test >>logs/scraper.log &
-# $NODE scrape_control.js --env=dev --site=test >>logs/scraper.log &
-# $NODE master.js --env=dev --site=test >>logs/master.log &
-
-$ELASTICSEARCH -d -p data/elasticsearch.pid
+echo "Starting up crawler..."
+$NODE crawler.js >>logs/crawler.log &
+echo "Starting up scraper..."
+$NODE scraper.js >>logs/scraper.log &
+echo "Starting up scrape_control..."
+$NODE scrape_control.js >>logs/scrape_control.log &
+echo "Starting up server..."
+$NODE server.js >>logs/server.log &

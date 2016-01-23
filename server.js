@@ -1,6 +1,8 @@
 /* server.js */
 
-var express = require('express');
+var express = require("express");
+var extend = require("extend");
+
 var App = require("./app").App;
 
 var app = new App("server");
@@ -52,6 +54,54 @@ server.get("/whwh", function (req, res) {
       });
     });
   }
+});
+
+var statFunctions = {
+  "npages": function(callback) {
+    app.open("db", function(db) {
+      db.collection.count({}, function(err, count) {
+        callback(err ? -1 : count);
+      });
+    });
+  },
+  "ncontent": function(callback) {
+    app.open("db", function(db) {
+      db.collection.count({
+        "content": { "$exists": 1 }
+      }, function(err, count) {
+        callback(err ? -1 : count);
+      });
+    });
+  },
+  "ngeo": function(callback) {
+    app.open("db", function(db) {
+      db.collection.count({
+        "content.geo": { "$exists": 1 }
+      }, function(err, count) {
+        callback(err ? -1 : count);
+      });
+    });
+  }
+};
+
+server.get("/stats", function(req, res) {
+  var stats = {};
+  var tasks = [];
+  for (var statName in req.query) {
+    if (req.query.hasOwnProperty(statName) && statFunctions[statName]) {
+      tasks.push((function(statName) {
+        return function(done) {
+          (statFunctions[statName])(function(value) {
+            stats[statName] = value;
+            done();
+          });
+        };
+      })(statName));
+    }
+  }
+  app.executeSequence(tasks, function() {
+    res.json({ status: "ok", stats: stats });
+  });
 });
 
 server.listen(app.config.web.port, function () {

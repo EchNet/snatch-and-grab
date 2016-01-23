@@ -42,20 +42,21 @@ UI
 
 0: Prototype
   Get the whole thing working end to end in some form.
-  - Why does scraper control sometimes rescrape when there are unscraped?
   - Get to a minimal deployment.
   - Test in the field!
+  - Logging
 
 1: Refine the Crawler
   Crawler runs steadily and doesn't get stuck.
-  Crawler is always non-destructive.
   As new articles are added, they appear on the list regularly.
+  Crawler is always non-destructive.
   Crawler and its data are deployed in the cloud.
   Crawler supports multiple languages
 
 2: Refine the Scraper
   Scraper re-extracts content for each article that is no longer "fresh".
   Scraper runs steadily and doesn't get stuck.
+  Scraper control doesn't requeue pages that the scraper simply hasn't caught up to.
   Pages that go dead are eventually have their content removed from the database.
   Scraper and its data are deployed in the cloud.
   Scraper supports multiple languages

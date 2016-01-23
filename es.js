@@ -53,7 +53,7 @@ function openElasticSearch(config, errorHandler) {
         }
       });
     },
-    geoFilter(indexName, docType, location, callback) {
+    geoFilter: function(indexName, docType, location, callback) {
       client.search({
         index: indexName,
         type: docType,

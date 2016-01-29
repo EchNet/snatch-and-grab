@@ -99,14 +99,26 @@ module.exports = function(params) {
     })(),
 
     elasticsearch: (function() {
-      return {
-        host: "localhost:9200",
+      function formProdEsUrl(host) {
+        var user = getEnv("ES_USER");
+        var password = getEnv("ES_PASSWORD");
+        return "https://" + user + ":" + password + "@" + host;
+      }
+
+      return extend(true, {}, {
         log: {
           level: "trace",
           type: "file",
           path: "logs/elasticsearch.log"
         }
-      };
+      }, (env == "dev") ? {
+        host: "localhost:9200",
+      } : {
+        hosts: [
+          formProdEsUrl("aws-us-east-1-portal7.dblayer.com:10565"),
+          formProdEsUrl("aws-us-east-1-portal10.dblayer.com:10230")
+        ]
+      });
     })(),
 
     control: (function() {

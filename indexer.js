@@ -73,6 +73,9 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
               "title": item.content.title,
               "location": [ item.content.geo.longitude, item.content.geo.latitude ]     // careful - reverse the order!
             }, next);
+            if (indexCount % 1000 == 0) {
+              console.log("Indexed items:", indexCount);
+            }
           }
         });
       })();

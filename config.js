@@ -116,7 +116,7 @@ module.exports = function(params) {
       var day = hour * 24;
       var week = day * 7;
       return {
-        quantum: env == "dev" ? (second * 20) : minute,
+        quantum: second * 20,
         recrawlInterval: (env == "dev" ? minute : hour) * 8,
         crawlReaperInterval: env == "dev" ? minute : hour,
         scrapeFreshnessTime: env == "dev" ? day : week

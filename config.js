@@ -115,8 +115,8 @@ module.exports = function(params) {
         host: "localhost:9200",
       } : {
         hosts: [
-          formProdEsUrl("aws-us-east-1-portal7.dblayer.com:10565"),
-          formProdEsUrl("aws-us-east-1-portal10.dblayer.com:10230")
+          formProdEsUrl("aws-us-east-1-portal7.dblayer.com:10582"),
+          formProdEsUrl("aws-us-east-1-portal10.dblayer.com:10236")
         ]
       });
     })(),

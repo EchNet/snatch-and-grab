@@ -36,6 +36,18 @@ function openElasticSearch(config, errorHandler) {
         }
       });
     },
+    dropIndex: function(indexName, callback) {
+      client.indices.delete({
+        index: indexName
+      }, function(err, response, status) {
+        if (err) {
+          errorHandler("ES indices.delete error", err);
+        }
+        else {
+          callback(response);
+        }
+      });
+    },
     insert: function(indexName, docType, doc, callback) {
       client.create({
         index: indexName,

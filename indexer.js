@@ -10,8 +10,13 @@ var docType = "page";
 
 app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
 
-  var indexName;
+  var indexName = app.args.index;
   var indexCount = 0;
+
+  // Drop the index
+  function dropIndex(callback) {
+    elasticsearch.dropIndex(indexName, callback);
+  }
 
   // Find the next available index name
   function nextAvailableIndexName(callback) {
@@ -83,7 +88,7 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
   }
 
   app.executeSequence([
-    nextAvailableIndexName,
+    (indexName ? dropIndex : nextAvailableIndexName),
     createIndex,
     loadIndex
   ], function() {

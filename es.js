@@ -62,6 +62,25 @@ function openElasticSearch(config, errorHandler) {
         }
       });
     },
+    bulkInsert: function(indexName, docType, docs, callback) {
+      var body = [];
+      for (var i = 0; i < docs.length; ++i) {
+        body.push({ index: {} });
+        body.push(docs[i]);
+      }
+      client.bulk({
+        index: indexName,
+        type: docType,
+        body: body
+      }, function(err, response, status) {
+        if (err) {
+          errorHandler("ES client.bulk error", err);
+        }
+        else {
+          callback(response);
+        }
+      });
+    },
     geoFilter: function(indexName, docType, location, callback) {
       client.search({
         index: indexName,

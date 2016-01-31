@@ -11,7 +11,7 @@ var docType = "page";
 app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
 
   var indexName = app.args.index;
-  var indexCount = 0;
+  var chunkSize = app.args.chunk || 1000;
 
   // Drop the index
   function dropIndex(callback) {
@@ -49,9 +49,77 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
     }, callback);
   }
 
-  // Load data into the index.
+  // Reformat MongodDB document for insertion into ES index.
+  function reformatItem(item) {
+    return {
+      "uri": item.uri,
+      "title": item.content.title,
+      "location": [ item.content.geo.longitude, item.content.geo.latitude ]     // careful - reverse the order!
+    };
+  }
+
+  // Load documents into the index, one at a time.
+  function loadIndexSingly(cursor, callback) {
+    var indexCount = 0;
+    (function next() {
+      cursor.nextObject(function(err, item) {
+        if (err) {
+          app.abort("mongdo cursor failed", err);
+        }
+        else if (!item) {
+          console.log("Indexed items:", indexCount);
+          callback();
+        }
+        else {
+          console.log("insert", item.uri);
+          ++indexCount;
+          elasticsearch.insert(indexName, docType, reformatItem(item), next);
+        }
+      });
+    })();
+  }
+
+  // Load documents into the index in bulk.
+  function loadIndexBulk(cursor, callback) {
+    var indexCount = 0;
+    var buffer = [];
+    function flush(callback) {
+      elasticsearch.bulkInsert(indexName, docType, buffer, function() {
+        console.log("Indexed items:", indexCount);
+        buffer = [];
+        callback();
+      });
+    }
+    (function next() {
+      cursor.nextObject(function(err, item) {
+        if (err) {
+          app.abort("mongdo cursor failed", err);
+        }
+        else if (!item) {
+          if (buffer.length > 0) {
+            flush(callback);
+          }
+          else {
+            callback();
+          }
+        }
+        else {
+          console.log("add", item.uri);
+          ++indexCount;
+          buffer.push(reformatItem(item));
+          if (indexCount % chunkSize == 0) {
+            flush(next);
+          }
+          else {
+            next();
+          }
+        }
+      });
+    })();
+  }
+
+  // Query and load documents into the index.
   function loadIndex(callback) {
-    console.log("loading index", indexName);
     db.collection.find({
       "content.geo": { "$exists": 1 }
     }, {
@@ -62,28 +130,7 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
       if (err) {
         app.abort("mongo query failed", err);
       }
-      (function next() {
-        cursor.nextObject(function(err, item) {
-          if (err) {
-            app.abort("mongdo cursor failed", err);
-          }
-          else if (!item) {
-            callback();
-          }
-          else {
-            console.log("insert", item.uri);
-            ++indexCount;
-            elasticsearch.insert(indexName, docType, {
-              "uri": item.uri,
-              "title": item.content.title,
-              "location": [ item.content.geo.longitude, item.content.geo.latitude ]     // careful - reverse the order!
-            }, next);
-            if (indexCount % 1000 == 0) {
-              console.log("Indexed items:", indexCount);
-            }
-          }
-        });
-      })();
+      (chunkSize <= 1 ? loadIndexSingly : loadIndexBulk)(cursor, callback);
     });
   }
 
@@ -92,7 +139,6 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
     createIndex,
     loadIndex
   ], function() {
-    console.log("Indexed items:", indexCount);
     app.exit(0);
   });
 });

@@ -234,7 +234,7 @@ function seedElasticSearch(app) {
 function seedSystem() { 
   return {
     open: function(callback) {
-      callback({ index: "pages1" });
+      callback({ index: "pages0" });
     },
     close: function(callback) {
       callback();

@@ -40,11 +40,11 @@ UI
 
 ## Development Plan ##
 
-0: Prototype
-  Get the whole thing working end to end in some form.
-  - Get to a minimal deployment.
-  - Test in the field!
+0: Get to practicality
   - Logging
+  - Server Operations
+  - Reduced data size
+  - Sort by distance
 
 1: Refine the Crawler
   - Crawler and its data are deployed in the cloud.
@@ -75,4 +75,4 @@ UI
 
 5: Refine the UI
   vary presentation for clustering factors
-  support multiple languages
+  Support language setting

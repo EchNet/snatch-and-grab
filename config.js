@@ -131,7 +131,8 @@ module.exports = function(params) {
         quantum: second * 20,
         recrawlInterval: (env == "dev" ? minute : hour) * 8,
         crawlReaperInterval: env == "dev" ? minute : hour,
-        scrapeFreshnessTime: env == "dev" ? day : week
+        scrapeFreshnessTime: env == "dev" ? day : week,
+        initialScrapesPerQuantum: 200
       };
     })()
   };

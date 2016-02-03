@@ -66,7 +66,7 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
               scrapesPerQuantum = Math.round(scrapesPerQuantum * 1.2);
             }
             else if (!scrapesPerQuantum) {
-              scrapesPerQuantum = 80;
+              scrapesPerQuantum = app.config.control.initialScrapesPerQuantum;
             }
             else if (scrapesPerQuantum > total/2) {
               scrapesPerQuantum -= Math.floor(total/2);

@@ -64,6 +64,7 @@ UI
   Pages that go dead are eventually have their content removed from the database.
   Scraper and its data are deployed in the cloud.
   Scraper supports multiple languages
+  Clean up geo scrape - ignore non-numbers.  Parse -.5
 
 3: Refine the Indexer
   Indexer records general type of article: city, monument, radio station, incident

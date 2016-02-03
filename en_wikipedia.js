@@ -49,20 +49,8 @@ function scrapeText(text) {
     var match;
     var entities = new AllHtmlEntities();
 
-    scrapage = {};
-
-    if (match = /<h1 id="firstHeading" class="firstHeading" lang="en">([^<][^<]*)<\/h1>/.exec(text)) {
-      scrapage.title = entities.decode(match[1]);
-    }
-
-    scrapage.categories = [];
-    var regex = /<a href="\/wiki\/Category:[^"]*" title="[^"]*">([^<]*)<\/a>/g;
-    while (match = regex.exec(text)) {
-      scrapage.categories.push(entities.decode(match[1]));
-    }
-
     if (match = /<span class="latitude">([0-9][^<]*)</.exec(text)) {
-      scrapage = extend(true, scrapage, {
+      scrapage = extend(true, scrapage || {}, {
         geo: {
           latitude: geoformat.parseValue(match[1])
         }, 
@@ -73,7 +61,7 @@ function scrapeText(text) {
     }
 
     if (match = /<span class="longitude">([0-9][^<]*)</.exec(text)) {
-      scrapage = extend(true, scrapage, {
+      scrapage = extend(true, scrapage || {}, {
         geo: {
           longitude: geoformat.parseValue(match[1])
         }, 
@@ -86,14 +74,26 @@ function scrapeText(text) {
     if (match = /<span class="geo-dec"[^>]*>([-0-9][^<]*)</.exec(text)) {
       geo = geoformat.parseLatLong(match[1]);
       if (geo) {
-        scrapage = extend(true, scrapage, { geo: geo, geo1: { text: match[1] } });
+        scrapage = extend(true, scrapage || {}, { geo: geo, geo1: { text: match[1] } });
       }
     }
 
     if (match = /<span class="geo"[^>]*>([-0-9][^<]*)</.exec(text)) {
       geo = geoformat.parseLatLong(match[1]);
       if (geo) {
-        scrapage = extend(true, scrapage, { geo: geo, geo2: { text: match[1] } });
+        scrapage = extend(true, scrapage || {}, { geo: geo, geo2: { text: match[1] } });
+      }
+    }
+
+    if (scrapage != null) {
+      if (match = /<h1 id="firstHeading" class="firstHeading" lang="en">([^<][^<]*)<\/h1>/.exec(text)) {
+        scrapage.title = entities.decode(match[1]);
+      }
+
+      scrapage.categories = [];
+      var regex = /<a href="\/wiki\/Category:[^"]*" title="[^"]*">([^<]*)<\/a>/g;
+      while (match = regex.exec(text)) {
+        scrapage.categories.push(entities.decode(match[1]));
       }
     }
   }

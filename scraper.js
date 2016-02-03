@@ -26,6 +26,7 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
         done();
       }
       else {
+        var priorUpdatedAt = record.updated_at;
         var priorContent = record.content;
         request({
           url: host + uri,
@@ -37,26 +38,16 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
             done();
           }
           else {
-            record.http_status = response.statusCode;
             record.updated_at = new Date();
             if (response.statusCode >= 300 && response.statusCode < 500) {
-              record.content = null;
+              // Throw out any prior content.
+              record["$unset"] = { "content": "" };
             }
-            if (response.statusCode == 200 &&
+            else if (response.statusCode == 200 &&
                 response.headers["content-type"] == "text/html; charset=UTF-8") {
               record.content = scrapeText(text);
             }
-            console.log(uri, response.statusCode, (function() {
-              if (record.content && !priorContent) {
-                return record.content.geo ? "first scrape - GEO" : "first scrape";
-              }
-              else if (record.content && priorContent) {
-                return (record.content.geo && !priorContent.geo) ? "rescrape - GEO" : "rescrape";
-              }
-              else {
-                return priorContent ? "content discarded" : "";
-              }
-            })());
+            console.log(uri, response.statusCode, priorUpdatedAt ? "rescrape" : "first scrape", record.content ? "GEO" : "");
             db.collection.update({ uri: uri }, record, done);
           }
         });

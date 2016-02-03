@@ -15,7 +15,6 @@ module.exports = function(params) {
   }
 
   params = extend({
-    site: "en_wikipedia",
     component: "server",
     env: getEnv("ENV", "dev")
   }, params);
@@ -24,79 +23,34 @@ module.exports = function(params) {
   var component = params.component;
   var env = params.env;
 
+  var second = 1000;
+  var minute = second * 60;
+
   return {
     params: params,
 
-    site: require("./" + site + ".js"),
+    site: site && require("./" + site + ".js"),
 
-    web: (function() {
+    system: (function() {
       return {
-        port: env == "dev" ? 3300 : 80
-      }
-    })(),
-
-    request: (function() {
-      return {
-        request: {
-          timeout: 5000
-        }
-      }; })(),
-
-    crawlerQueue: (function() {
-      return {
-        prefix: "cq",
-        concurrency: 5,
-        redis: {
-          host: "localhost",
-          port: 6379,
-          db: 1
-        }
+        location: env == "prod" ? "s3://whwh" : ".",
+        fileName: "config/system.json",
+        freshness: 5 * minute 
       };
     })(),
 
-    scraperQueue: (function() {
-      return {
-        prefix: "sc",
-        concurrency: env == "dev" ? 3 : 10,
-        redis: {
-          host: "localhost",
-          port: 6379,
-          db: 2
-        }
-      };
-    })(),
+    web: {
+      port: 3300
+    },
 
-    checklist: (function() {
-      return {
-        redis: {
-          host: "localhost",
-          port: 6379,
-          db: 3
-        }
-      };
-    })(),
+    request: {
+      timeout: env == "prod" ? 5000 : 1000,
+      retries: env == "prod" ? 10 : 3
+    },
 
-    database: (function() {
-      return extend(true, {}, {
-        mongo: {
-          collection: site
-        }
-      }, (env == "dev") ? {
-        mongo: {
-          host: "localhost",
-          port: 27017,
-          database: "local"
-        }
-      } : {
-        mongo: {
-          host: "c462.candidate.62.mongolayer.com",
-          port: 10462,
-          database: "whwh",
-          user: getEnv("MONGO_USER"),
-          password: getEnv("MONGO_PASSWORD")
-        }
-      });
-    })(),
+    scraperQueue: {
+      concurrency: env == "dev" ? 3 : 10
+    },
 
     elasticsearch: (function() {
       function formProdEsUrl(host) {
@@ -119,20 +73,6 @@ module.exports = function(params) {
           formProdEsUrl("aws-us-east-1-portal10.dblayer.com:10236")
         ]
       });
-    })(),
-
-    control: (function() {
-      var second = 1000;
-      var minute = second * 60;
-      var hour = minute * 60;
-      var day = hour * 24;
-      var week = day * 7;
-      return {
-        quantum: second * 20,
-        recrawlInterval: (env == "dev" ? minute : hour) * 8,
-        crawlReaperInterval: env == "dev" ? minute : hour,
-        scrapeFreshnessTime: env == "dev" ? day : week
-      };
     })()
   };
 }

@@ -1,69 +1,120 @@
 /* scraper.js */
 
-var version = "0.1.1";
-
+var fs = require("fs");
 var request = require("request");
 
-var App = require("./app").App;
+var PipelineApp = require("./app").PipelineApp;
+var app = new PipelineApp("scraper");
 
-var app = new App("scraper");
+var inFileName = app.args["in"];
+var outFileName = app.args.out || ("data/" + app.params.site + ".data");
+var outFile = fs.createWriteStream(outFileName, { flags: "w+" });
 
-app.open([ "scraperQueue", "db" ], function(queue, db) {
+var workerCount = 0;
+var fd;
+var leftover = "";
+var bufferSize = 1024;
+var buffer = new Buffer(bufferSize);
 
-  var host = app.config.site.host;
-  var timeout = app.config.request.timeout;
-  var scrapeText = app.config.site.scrapeText;
-
-  function work(job, done) {
-    var uri = job.data.uri;
-    db.collection.findOne({ uri: uri }, function(err, record) {
-      if (err) {
-        console.log(uri, "query error", err);
-        done();
+function getNextUri() {
+  var eol, uri, cc;
+  for (;;) {
+    eol = leftover.indexOf("\n");
+    if (eol >= 0) {
+      uri = leftover.substring(0, eol);
+      leftover = leftover.substring(eol + 1);
+      break;
+    }
+    cc = fs.readSync(fd, buffer, 0, bufferSize, null);
+    if (cc <= 0) {
+      if (leftover.length) {
+        uri = leftover;
+        leftover = "";
       }
-      else if (!record) {
-        console.log(uri, "no such record");
-        done();
+      break;
+    }
+    leftover += buffer.toString("ascii", 0, cc);
+  }
+  return uri;
+}
+
+function doScrapeOne(uri, done, onError) {
+  var host = app.config.site.host;
+  var url = host + uri;
+  request({
+    url: url,
+    timeout: app.config.request.timeout,
+    followRedirect: false
+  }, function(err, response, text) {
+    if (err) {
+      onError(url, err);
+    }
+    else if (response.statusCode != 200) {
+      app.warn("bad status code", { url: url, statusCode: response.statusCode });
+      done();
+    }
+    else if (!/^text/.exec(response.headers["content-type"])) {
+      app.warn("unexpected content type", { url: url, error: err });
+      done();
+    }
+    else {
+      var content = app.config.site.scrapeText(text);
+      if (content != null) {
+        var record = {
+          uri: uri,
+          content: content
+        };
+        app.info("scrape", record);
+        outFile.write(JSON.stringify(record) + "\n");
+      }
+      done();
+    }
+  });
+}
+
+function scrapeOne(uri, done) {
+  var tries = 0;
+  (function tryIt() {
+    ++tries;
+    doScrapeOne(uri, done, function(url, err) {
+      if (tries > app.config.request.retries) {
+        app.abort("request error", { url: url, error: err });
       }
       else {
-        var priorContent = record.content;
-        request({
-          url: host + uri,
-          timeout: timeout,
-          followRedirect: false
-        }, function(err, response, text) {
-          if (err) {
-            console.log(uri, "request error", err);
-            done();
-          }
-          else {
-            record.http_status = response.statusCode;
-            record.updated_at = new Date();
-            record.scraper_version = version;
-            if (response.statusCode >= 300 && response.statusCode < 500) {
-              record.content = null;
-            }
-            if (response.statusCode == 200 &&
-                response.headers["content-type"] == "text/html; charset=UTF-8") {
-              record.content = scrapeText(text);
-            }
-            console.log(uri, response.statusCode, (function() {
-              if (record.content && !priorContent) {
-                return record.content.geo ? "first scrape - GEO" : "first scrape";
-              }
-              else if (record.content && priorContent) {
-                return (record.content.geo && !priorContent.geo) ? "rescrape - GEO" : "rescrape";
-              }
-              else {
-                return priorContent ? "content discarded" : "";
-              }
-            })());
-            db.collection.update({ uri: uri }, record, done);
-          }
-        });
+        setTimeout(tryIt, app.config.request.timeout);
       }
     });
-  }
+  })();
+}
 
-  queue.process(work);
-});
+function exit() {
+  app.exit(0);
+}
+
+function work() {
+  ++workerCount;
+  (function next() {
+    var uri = getNextUri();
+    if (!uri) {
+      if (--workerCount == 0) {
+        exit();
+      }
+    }
+    else {
+      scrapeOne(uri, next);
+    }
+  })();
+}
+
+if (!inFileName) {
+  app.abort("no input file name?");
+}
+else if (inFileName.length && inFileName.charAt(0) == "@") {
+  scrapeOne(inFileName.substring(1), exit);
+}
+else {
+  fd = fs.openSync(inFileName, "r");
+  for (var i = 0; i < app.config.scraperQueue.concurrency; ++i) {
+    setTimeout(work, 1);
+  }
+}

@@ -3,7 +3,6 @@
 var elasticsearch = require("elasticsearch");
 
 function openElasticSearch(config, errorHandler) {
-  console.log("Initializing ElasticSearch client...", config);
 
   var client = new elasticsearch.Client(config);
 
@@ -86,7 +85,7 @@ function openElasticSearch(config, errorHandler) {
         index: indexName,
         type: docType,
         body: {
-          "size": 10,
+          "size": 12,
           "query": {
             "function_score": {
               "functions": [
@@ -94,7 +93,7 @@ function openElasticSearch(config, errorHandler) {
                   "gauss": {
                     "location": {
                       origin: location,
-                      scale: "5km"
+                      scale: "4km"
                     }
                   }
                 }
@@ -104,7 +103,6 @@ function openElasticSearch(config, errorHandler) {
         }
       }).then(callback, function(err) {
         // TODO: report error to client
-        console.log(err);
       });
     }
   };

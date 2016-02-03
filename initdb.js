@@ -1,8 +1,8 @@
 /* initdb.js */
 
-var App = require("./app").App;
+var PipelineApp = require("./app").PipelineApp;
 
-var app = new App("initdb");
+var app = new PipelineApp("initdb");
 
 app.open("db", function(db) {
   app.executeSequence([

@@ -2,77 +2,94 @@
 
 Crawl a Web site and build a geographical search index.
 
-Version 1.0 crawls only the Wikipedia sites (en.wikipedia.com, it.wikipedia.com, ...)!
+Version 1.0 crawls only Wikipedia sites!  Supported languages:
+
+- English (en.wikipedia.com)
+- Italian (it.wikipedia.com)
+- German (de.wikipedia.com)
 
 ## Base Software ##
 
-Platform: NodeJS 5.2.0 and NPM
+NodeJS 5.2.0 and NPM
 
-Redis (for queueing)  [http://redis.io/download](http://redis.io/download)
- - tested using version 2.6  
- - latest is 3.0
+ElasticSearch 2.1.1
 
-MongoDB (for persistence of scraped data) 
- - tested using 3.0.8
+Amazon Web Services
 
-ElasticSearch (for geo-search)  2.1.1
+## Architecture ##
 
-## Functional components ##
+There is an active indexing pipeline for each supported language.
 
-Crawler
- - Register the URLs of the target pages (articles) on the site (wikipedia) in the scraper data store.
+The Crawler runs daily.  Its role is to create an up-to-date list of all target pages
+(articles) on the site (wikipedia), which feeds the Indexer.
 
-Scraper
-  - Scraper is fed by the output of the crawler.
-  - Scraper extracts content for each unscraped article.
+The Indexer runs weekly.  Its role is to create a new ElasticSearch index containing only
+target pages that have geographical coordinates.  Once the new index is ready, it 
+becomes the new current index, which powers the Query API.
 
-Indexer
-  - Create a search index from the scraped content.
-  - Search index supports geo queries.
+The Query API is served by a NodeJS Express server, sitting behind an nginx and a load 
+balancer. 
 
-Server
-  - Queries the search index for closest points of interest
-  - Offers admin queries
+There's also a Web UI.
 
-UI 
-  - Web page, using navigator.geolocation if available, manual input if not.
-  - Shows best matches
+## Commands ## 
 
-## Development Plan ##
+All commands log their output to the logs folder.
 
-0: Get to practicality
-  - Logging
-  - Server Operations
-  - Reduced data size
-  - Sort by distance
+### Crawler ###
 
-1: Refine the Crawler
-  - Crawler and its data are deployed in the cloud.
-  - Crawler runs on a schedule.
-  - Crawler doesn't get stuck or bogged down with multiple tracks.
-    (Or if it does, there are means for unstucking it)
-  - As new articles are added, they appear on the list regularly.
-  - Crawler supports multiple languages
+  node crawler --env=dev --out=outFileName --site=lang\_wikipedia
 
-2: Refine the Scraper
-  Scraper control doesn't increase max if fewer than max were caught last time.
-  Scraper control doesn't requeue pages that the scraper simply hasn't caught up to.
-  Scraper runs steadily and doesn't get stuck.
-  Scraper re-extracts content for each article that is no longer "fresh".
-  Pages that go dead are eventually have their content removed from the database.
-  Scraper and its data are deployed in the cloud.
-  Scraper supports multiple languages
+Creates a list of all target URIs on the site and writes it to the specified output
+file (default=data/crawler.out), one entry per line.
 
-3: Refine the Indexer
-  Indexer records general type of article: city, monument, radio station, incident
-  Indexer and search engine are deployed to the cloud.
-  Indexer creates one index per language.
+### Scraper ###
 
-4: Refine the server
-  Regions are also shown in some cases.
-  Distance and direction are shown for each
-  Query takes language parameter.
+  node scraper --env=dev --in=inputFile --out=outputFile --site=lang\_wikipedia
 
-5: Refine the UI
-  vary presentation for clustering factors
-  Support language setting
+### Indexer ###
+
+  node indexer --env=dev --in=inputFile --site=lang\_wikipedia
+
+## V1 TODO ##
+
+Operations
+- Save AMIs
+- Save HTTP access logs
+- What level of monitoring/alerting is necessary?
+
+Web Site
+- Choose a website hosting service
+- Register a better domain name!
+- Implement an asset deployment scheme - proxy assets from S3?
+- Deploy HTTPS
+
+Non-english Wikipedias
+- Add query support for additional languages
+
+Categorization
+- Add categorization: city, monument, radio station, incident
+- Drop some categories from the index.
+- Filter query by category (point of interest, region, other)
+
+Client
+- Google Map integration
+- UI supports a which-wikipedia setting.
+- Add enablement instructions.
+- Test on IE
+- UI beautification
+
+## BUGS ##
+
+- BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
+
+## V2 ##
+
+Android app
+iOS app
+
+Additional languages:
+
+- Spanish (en.wikipedia.com)
+- French (fr.wikipedia.com)
+- Portuguese (pt.wikipedia.com)

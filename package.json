@@ -1,20 +1,28 @@
 {
-  "name": "crawler",
+  "name": "whwh",
   "author": {
     "name": "James Echmalian"
   },
+  "private": true,
   "version": "0.1.0",
   "dependencies": {
-    "kue": "~0.10.4",
-    "redis": "*",
-    "mongodb": "*",
+    "aws-sdk": "*",
+    "chai": "^3.5.0",
     "elasticsearch": "*",
-    "xmldom": "*",
-    "yargs": "*",
+    "express": "*",
     "extend": "*",
-    "request": "*",
+    "geolib": "*",
     "html-entities": "*",
-    "express": "*"
+    "mocha": "^2.4.5",
+    "redis": "*",
+    "request": "*",
+    "winston": "*",
+    "winston-daily-rotate-file": "*",
+    "xmldom": "*",
+    "yargs": "*"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "scripts": {
+    "test": "./node_modules/.bin/mocha test/geoformat.js"
+  }
 }

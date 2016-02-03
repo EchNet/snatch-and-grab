@@ -2,6 +2,7 @@
 
 var express = require("express");
 var extend = require("extend");
+var geolib = require("geolib");
 
 var App = require("./app").App;
 
@@ -9,9 +10,13 @@ var app = new App("server");
 
 var server = express();
 
+// Static assets.
 server.use(express.static("www"));
 
+// Geo-search endpoint.
 server.get("/whwh", function (req, res) {
+
+  app.info("request", { uri: "/whwh", query: req.query });
 
   function ok(hits) {
     res.json({ status: "ok", results: hits });
@@ -21,39 +26,52 @@ server.get("/whwh", function (req, res) {
     res.json({ status: "error", msg: errmsg });
   }
 
-  var latitude = parseFloat(req.query.lat);
-  var longitude = parseFloat(req.query.long);
+  var params = {
+    latitude: parseFloat(req.query.lat),
+    longitude: parseFloat(req.query.long),
+    lang: req.query.hash || req.query.lang || "en"
+  };
 
-  if (isNaN(latitude)) {
-    error("latitude must be a number");
+  if (isNaN(params.latitude)) {
+    return error("latitude must be a number");
   }
-  else if (isNaN(longitude)) {
-    error("longitude must be a number");
+  if (isNaN(params.longitude)) {
+    return error("longitude must be a number");
   }
-  else {
-    app.open([ "system", "elasticsearch" ], function(system, elasticsearch) {
 
-      var indexName = system.index || "pages0";
+  // just Wikipedia for now
+  var site = params.lang + "_wikipedia";
+  var siteInfo = require("./" + site);
 
-      elasticsearch.geoFilter(indexName, "page", [ longitude, latitude ], function(results) {
-        ok((function() {
-          if (results.hits && results.hits.hits) {
-            return results.hits.hits.map(function(hit) {
-              if (hit._score == 0) return undefined;
-              return {
-                url: app.config.site.host + hit._source.uri,
-                title: hit._source.title,
-                location: hit._source.location,
-                // Distance would sure be nice.
-                score: hit._score
-              };
-            });
-          }
-          return null;
-        })());
-      });
+  function postProcessHits(hits) {
+    return hits.filter(function(hit) {
+      return hit._score > 0;
+    }).map(function(hit) {
+      return {
+        url: siteInfo.host + hit._source.uri,
+        title: hit._source.title,
+        loc: hit._source.location,
+        d: geolib.getDistance({ latitude: params.latitude, longitude: params.longitude },
+          { latitude: hit._source.location[1], longitude: hit._source.location[0] })
+      };
     });
   }
+
+  app.open([ "system", "elasticsearch" ], function(system, elasticsearch) {
+
+    var index = params.index || system.sites[site].index;
+
+    var location = [ params.longitude, params.latitude ];
+
+    app.info("search query", { index: index, location: location });
+
+    elasticsearch.geoFilter(index, "page", location, function(results) {
+      app.info("search results", { location: location, results: results });
+      var data = results.hits && results.hits.hits ? postProcessHits(results.hits.hits) : [];
+      app.info("response", { uri: "/whwh", data: data });
+      ok(data);
+    });
+  });
 });
 
 var statFunctions = {
@@ -84,6 +102,7 @@ var statFunctions = {
   }
 };
 
+// Stats endpoint.
 server.get("/stats", function(req, res) {
   var stats = {};
   var tasks = [];
@@ -105,5 +124,5 @@ server.get("/stats", function(req, res) {
 });
 
 server.listen(app.config.web.port, function () {
-  console.log("Listening on port " + app.config.web.port);
+  app.info("Listening on port " + app.config.web.port);
 });

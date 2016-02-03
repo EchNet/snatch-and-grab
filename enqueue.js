@@ -1,8 +1,8 @@
 /* enqueue.js */
 
-var App = require("./app").App;
+var PipelineApp = require("./app").PipelineApp;
 
-var app = new App("enqueue");
+var app = new PipelineApp("enqueue");
 var queueId = app.args.queue || "crawlerQueue";
 
 app.open(queueId, function(queue) {

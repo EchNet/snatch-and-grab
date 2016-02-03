@@ -1,6 +1,7 @@
 /* database.js */
 
 var MongoClient = require("mongodb").MongoClient;
+var winston = require("winston");
 
 function openDatabase(wrapper, conf, callback) {
   var url = "mongodb://";
@@ -8,7 +9,7 @@ function openDatabase(wrapper, conf, callback) {
     url += conf.user + ":" + conf.password + "@";
   }
   url += conf.host + ":" + conf.port + "/" + conf.database;
-  console.log("Connecting to " + url + "...");
+  winston.info("Connecting to " + url + "...");
   MongoClient.connect(url, function(err, db) {
     if (err) {
       callback(err, wrapper);

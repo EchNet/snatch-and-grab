@@ -1,5 +1,12 @@
 /* app.js */
 
+var fs = require("fs");
+
+var winston = require("winston");
+winston.exitOnError = false;
+winston.remove(winston.transports.Console);
+var WinstonDailyRotateFile = require("winston-daily-rotate-file");
+
 //
 // Indispensable.
 //
@@ -56,7 +63,7 @@ function seedWorkQueue(app, which) {
 
   function openWorkQueue(service) {
     var kue = require("kue");
-    console.log("Initializing", which);
+    winston.info("Initializing", which);
     var conf = app.config[which];
     var queue = kue.createQueue(conf);
 
@@ -67,7 +74,7 @@ function seedWorkQueue(app, which) {
 
     function removeJobs(err, ids) {
       if (err) {
-        console.log("error clearing queue", err);
+        winston.warn("error clearing queue", err);
       }
       if (ids) {
         ids.forEach(function(id) {
@@ -80,7 +87,7 @@ function seedWorkQueue(app, which) {
 
     function requeueJobs(err, ids) {
       if (err) {
-        console.log("error restarting queue", err);
+        winston.warn("error restarting queue", err);
       }
       if (ids) {
         ids.forEach(function(id) {
@@ -93,9 +100,9 @@ function seedWorkQueue(app, which) {
 
     service.queue = queue;
     service.wrapper = {
-      enqueue: function(uri, callback) {
-        console.log("enqueue", uri);
-        queue.create("job", { uri: uri }).removeOnComplete(true).save(callback);
+      enqueue: function(data, callback) {
+        winston.info("enqueue", data);
+        queue.create("job", data).removeOnComplete(true).save(callback);
       },
       process: function(worker) {
         var concurrency = conf.concurrency || 1;
@@ -153,60 +160,6 @@ function seedWorkQueue(app, which) {
 }
 
 //
-// Redis checklist connector.
-//
-function seedChecklist(app) { 
-
-  function openChecklist(service, callback) {
-    console.log("Initializing checklist...");
-    var redis = require("redis");
-    var redisConfig = app.config.checklist.redis;
-    var redisClient = redis.createClient({
-      host: redisConfig.host,
-      port: redisConfig.port
-    });
-    redisClient.select(redisConfig.db, function(err) {
-      if (err) {
-        app.abort("redis select", err);
-      }
-      else {
-        var wrapper = {
-          check: function(uri, callback) {
-            redisClient.get(uri, function(err, reply) {
-              if (!reply) {
-                redisClient.set(uri, "X", callback);
-              }
-            });
-          }
-        };
-        service.redisClient = redisClient;
-        service.wrapper = wrapper;
-        callback(wrapper);
-      }
-    });
-  }
-
-  var seed = {
-    open: function(callback) {
-      if (seed.wrapper) {
-        callback(seed.wrapper);
-      }
-      else {
-        openChecklist(seed, callback);
-      }
-    },
-    close: function(callback) {
-      if (seed.redisClient) {
-        seed.redisClient.quit();
-        seed.redisClient = null;
-      }
-      callback();
-    }
-  };
-  return seed;
-}
-
-//
 // ElasticSearch connector.
 //
 function seedElasticSearch(app) { 
@@ -228,13 +181,60 @@ function seedElasticSearch(app) {
   return seed;
 }
 
+function jsonFromS3(bucket, key, callback) {
+  var AWS = require("aws-sdk");
+  var s3 = new AWS.S3();
+  s3.getObject({
+    Bucket: bucket,
+    Key: key,
+  }, function(err, data) {
+    if (err) {
+      callback(err);
+    }
+    else {
+      callback(null, JSON.parse(data.Body.toString()));
+    }
+  });
+}
+
 //
 // System configuration connector.
 //
-function seedSystem() { 
+function seedSystem(app) { 
+  var cached = null;
   return {
     open: function(callback) {
-      callback({ index: "pages0" });
+      var config = app.config.system;
+
+      function success() {
+        callback(cached.obj);
+      }
+
+      if (cached && cached.time > new Date().getTime() - config.freshness) {
+        return success();
+      }
+
+      function updateCache(obj) {
+        cached = {
+          obj: obj,
+          time: new Date().getTime()
+        };
+        success();
+      }
+
+      var m = config.location.match(/^s3:\/\/(.*)$/);
+      if (m) {
+        jsonFromS3(m[1], config.fileName, function(err, obj) {
+          if (err) throw err;
+          updateCache(obj);
+        });
+      }
+      else {
+        fs.readFile(config.fileName, "utf8", function(err, data) {
+          if (err) throw err;
+          updateCache(JSON.parse(data));
+        });
+      }
     },
     close: function(callback) {
       callback();
@@ -272,51 +272,58 @@ function closeAllServices(app, done) {
   for (var key in app.services) {
     sequence.push(function(done) { app.services[key].close(done); });
   }
-  executeSequence(sequence, done);
+  executeSequence(sequence, function(){ setTimeout(done, 1000); });
 }
 
 //
 // Graceful app shutdown.
 //
 function exit(app, status) {
-  closeAllServices(app, function() {
-    status = status || 0;
-    console.log(app.config.params.component, "exiting", "(" + status + ")");
-    process.exit(status);
+  status = status || 0;
+  winston.log("exiting", { status: status }, function() {
+    closeAllServices(app, function() {
+      process.exit(status);
+    });
   });
 }
 
 function abort(app, msg, error) {
   if (error) {
-    console.log(msg, error);
+    console.error(msg);
+    winston.error(msg, { error: error });
   }
   else {
-    console.log(msg);
+    console.error(msg, error);
+    winston.warn(msg);
   }
   exit(app, 1);
 }
 
-//
-// App constructor.
-//
-function App(component) {
-  var self = this;
-  var args = require("yargs").argv;
-  var config = require("./config.js")({
-    component: component,
-    site: args.site,
-    env: args.env
-  });
+function initLog(app) {
+  var logName = app.component;
+  if (app.config.params.site) {
+    logName += "-" + app.config.params.site;
+  }
+  logName += ".log";
+  winston.add(WinstonDailyRotateFile, { dirname: "logs", filename: logName });
+  winston.log("info", "starting");
+}
 
+//
+// BaseApp constructor.
+//
+function BaseApp(component, args, config) {
+  var self = this;
   self.component = component;
   self.args = args;
+  self.params = config.params;
   self.config = config;
   self.services = {
     db: seedDatabase(self),
     crawlerQueue: seedWorkQueue(self, "crawlerQueue"),
     scraperQueue: seedWorkQueue(self, "scraperQueue"),
     elasticsearch: seedElasticSearch(self),
-    system: seedSystem()
+    system: seedSystem(self)
   };
 
   self.executeSequence = executeSequence;
@@ -325,10 +332,43 @@ function App(component) {
   self.exit = function() { exit(self); }
   self.abort = function(msg, error) { abort(self, msg, error); }
 
-  console.log(component, "starting");
+  self.log = winston.log;
+  self.debug = winston.debug;
+  self.info = winston.info;
+  self.warn = winston.warn;
+  self.error = winston.error;
+
+  initLog(this);
+}
+
+//
+// App constructor.
+//
+function App(component) {
+  var args = require("yargs").argv;
+  var config = require("./config.js")({
+    component: component,
+    site: args.site,
+    env: args.env
+  });
+  BaseApp.call(this, component, args, config);
+}
+
+//
+// PipelineApp constructor.  Defaults site to en_wikipedia, and that's it.
+//
+function PipelineApp(component) {
+  var args = require("yargs").argv;
+  var config = require("./config.js")({
+    component: component,
+    site: args.site || "en_wikipedia",
+    env: args.env
+  });
+  BaseApp.call(this, component, args, config);
 }
 
 module.exports = {
   App: App,
+  PipelineApp: PipelineApp,
   executeSequence: executeSequence
 };

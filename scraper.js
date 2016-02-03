@@ -39,7 +39,6 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
           else {
             record.http_status = response.statusCode;
             record.updated_at = new Date();
-            record.scraper_version = version;
             if (response.statusCode >= 300 && response.statusCode < 500) {
               record.content = null;
             }

@@ -20,15 +20,19 @@ ElasticSearch (for geo-search)  2.1.1
 ## Functional components ##
 
 Crawler
- - Register the URLs of the target pages (articles) on the site (wikipedia) in the scraper data store.
+ - Create a list of all target page (articles) on the site (wikipedia)
+ - Create a work queue of all target pages
 
 Scraper
-  - Scraper is fed by the output of the crawler.
-  - Scraper extracts content for each unscraped article.
+  - Scraper opens a new scrape collection, then starts workers.
+  - Workers pick off the work queue that was output by the crawler
+  - For each Scraper extracts content for each unscraped article.
+  - The new collection becomes current
 
 Indexer
-  - Create a search index from the scraped content.
-  - Search index supports geo queries.
+  - Create a search index from a scrape collection.
+  - Assuming that size of collection is on the order of 1E9, recreating is reasonable!
+  - Search index represents geo info in the format expected by ElasticSearch
 
 Server
   - Queries the search index for closest points of interest
@@ -38,20 +42,18 @@ UI
   - Web page, using navigator.geolocation if available, manual input if not.
   - Shows best matches
 
-## Development Plan ##
+## V1 Development Plan ##
 
-0: Get to practicality
-  - Logging
-  - Server Operations
+0: Systems
   - Reduced data size
-  - Sort by distance
+  - Dynamic state - the data structures in use, those that are being built
+  - Logging
+  - Alerts
+  - Nginx runs as service, proxies to Node
 
 1: Refine the Crawler
-  - Crawler and its data are deployed in the cloud.
   - Crawler runs on a schedule.
-  - Crawler doesn't get stuck or bogged down with multiple tracks.
-    (Or if it does, there are means for unstucking it)
-  - As new articles are added, they appear on the list regularly.
+  - Crawler runs from start to finish 
   - Crawler supports multiple languages
 
 2: Refine the Scraper
@@ -68,9 +70,10 @@ UI
   Indexer and search engine are deployed to the cloud.
   Indexer creates one index per language.
 
-4: Refine the server
-  Regions are also shown in some cases.
-  Distance and direction are shown for each
+4: Refine the Query
+  Show tiers - close by, further, a short walk away.
+  Show Distance and direction for each item
+  Filter by page type (point of interest, region, other)
   Query takes language parameter.
 
 5: Refine the UI

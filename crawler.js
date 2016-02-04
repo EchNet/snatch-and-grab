@@ -12,7 +12,7 @@ var host = app.config.site.host;
 var originUri = app.config.site.origin;
 var timeout = app.config.request.timeout;
 
-var outFileName = app.args.out || "crawler.out";
+var outFileName = app.args.out || "data/crawler.out";
 var outFile = fs.createWriteStream(outFileName, { encoding: "utf8" });
 outFile.on("error", function(err) {
   app.abort("Error writing to " + outFile, err);

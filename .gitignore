@@ -2,5 +2,4 @@ logs/
 data/
 node_modules/
 npm-debug.log
-*.out
 *.swp

@@ -2,84 +2,83 @@
 
 Crawl a Web site and build a geographical search index.
 
-Version 1.0 crawls only the Wikipedia sites (en.wikipedia.com, it.wikipedia.com, ...)!
+Version 1.0 crawls only Wikipedia sites!  Supported languages:
+
+- English (en.wikipedia.com)
+- Italian (it.wikipedia.com)
 
 ## Base Software ##
 
 Platform: NodeJS 5.2.0 and NPM
 
+ElasticSearch 2.1.1
+
 Redis (for queueing)  [http://redis.io/download](http://redis.io/download)
  - tested using version 2.6  
  - latest is 3.0
 
-MongoDB (for persistence of scraped data) 
- - tested using 3.0.8
+Nginx (coming soon)
 
-ElasticSearch (for geo-search)  2.1.1
+## Architecture ##
 
-## Functional components ##
+There is an active indexing pipeline for each supported language.
 
-Crawler
- - Create a list of all target page (articles) on the site (wikipedia)
- - Writes it to a file
- - Uploads the file to S3
+The Crawler runs daily.  Its role is to create an up-to-date list of all target pages
+(articles) on the site (wikipedia), which feeds the Indexer.
 
-Indexer
- - Creates or continues an ES index
- - Fetches the latest target page list from S3
- - Loads target page list into a work queue
- - Launches scrapers
- - When scraping is done, makes the new index current.
- - Destroys the work queue
- - Uploads scraper log file to S3
+The Indexer runs weekly.  Its role is to create a new ElasticSearch index containing only
+target pages that have geographical coordinates.  Once the new index is ready, it 
+becomes the new current index, which powers the Query API.
 
-Scraper
-  - Grabs 5000 items from the work queue
-  - For each, scraper extracts geo location.
-  - Formats entries having geo and bulk-loads them into new ES index.
+The Query API is served by a NodeJS Express server, sitting behind an nginx and a load 
+balancer. 
 
-Server
-  - Queries the search index for closest points of interest
-  - Proxies some ES queries
+There's also a Web UI.
 
-UI 
-  - Web page, using navigator.geolocation if available, manual input if not.
-  - Shows best matches
+## Commands ## 
 
-## V1 Development Plan ##
+### Crawler ###
 
-0: Systems
-  - Dynamic state - the data structures in use, those that are being built
-  - Logging
-  - Alerts
-  - Nginx runs as service, proxies to Node
+  node crawler --env=dev --out=outFileName --site=lang\_wikipedia
 
-1: Refine the Crawler
-  - Crawler runs on a schedule.
-  - Crawler runs from start to finish 
-  - Crawler supports English, Italian, and German.
+Creates a list of all target URIs on the site and writes it to the specified output
+file (default=data/crawler.out), one entry per line.
 
-2: Refine the Scraper
-  Scraper control doesn't increase max if fewer than max were caught last time.
-  Scraper control doesn't requeue pages that the scraper simply hasn't caught up to.
-  Scraper runs steadily and doesn't get stuck.
-  Scraper re-extracts content for each article that is no longer "fresh".
-  Pages that go dead are eventually have their content removed from the database.
-  Scraper and its data are deployed in the cloud.
-  Scraper supports multiple languages
-  Clean up geo scrape - ignore non-numbers.  Parse -.5
+Logs files are identified by the pattern logs/crawler.log.X.
 
-3: Refine the Indexer
-  Indexer records general type of article: city, monument, radio station, incident
-  Indexer and search engine are deployed to the cloud.
-  Indexer creates one index per language.
+### Indexer ###
 
-4: Refine the Query
-  Show tiers - close by, further, a short walk away.
-  Show Distance and direction for each item
-  Filter by page type (point of interest, region, other)
-  Query takes language parameter.
+TBD
 
-5: Refine the UI
-  vary presentation for clustering factors
-  Support language setting
+## V1 TODO ##
+
+- Figure out how dynamic system state is stored.
+- Apply a consistent logging pattern throughout.
+- Rotate log files
+- Crawler uploads to S3
+- List is downloadable through website
+- Figure out how to do system alerts.
+- Bring in nginx
+- Run crawler on a schedule.
+- Scraper is driven by URI list
+- Condense the scraper and the indexer phases into one, bulking scrapes as well as index upserts.
+- Add crash recovery to crawler.
+- Eradicate MongoDB code.
+- Run indexer on a schedule.
+- Add scraper support for Italian
+- Add query support for Italian
+- Drop Redis from the picture
+- BUG: Scraper control should not increase max if fewer than max were caught last time.
+- BUG: Scraper control sometimes requeues pages.
+- Add support for German
+- Add a unit testing framework
+- BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
+- Add categorization: city, monument, radio station, incident
+- Filter query by category (point of interest, region, other)
+- Refine query: show distance and direction for each match
+- Add tiers to API results: close by, further, a short walk away.
+- Query takes language parameter.
+- Query refreshes dynamic configuration periodically.
+- UI supports a language setting.
+- UI supports tiers.
+- UI enables manual input.

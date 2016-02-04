@@ -129,8 +129,6 @@ module.exports = function(params) {
       var week = day * 7;
       return {
         quantum: second * 20,
-        recrawlInterval: (env == "dev" ? minute : hour) * 8,
-        crawlReaperInterval: env == "dev" ? minute : hour,
         scrapeFreshnessTime: env == "dev" ? day : week,
         initialScrapesPerQuantum: 200
       };

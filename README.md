@@ -21,22 +21,26 @@ ElasticSearch (for geo-search)  2.1.1
 
 Crawler
  - Create a list of all target page (articles) on the site (wikipedia)
- - Create a work queue of all target pages
-
-Scraper
-  - Scraper opens a new scrape collection, then starts workers.
-  - Workers pick off the work queue that was output by the crawler
-  - For each Scraper extracts content for each unscraped article.
-  - The new collection becomes current
+ - Writes it to a file
+ - Uploads the file to S3
 
 Indexer
-  - Create a search index from a scrape collection.
-  - Assuming that size of collection is on the order of 1E9, recreating is reasonable!
-  - Search index represents geo info in the format expected by ElasticSearch
+ - Creates or continues an ES index
+ - Fetches the latest target page list from S3
+ - Loads target page list into a work queue
+ - Launches scrapers
+ - When scraping is done, makes the new index current.
+ - Destroys the work queue
+ - Uploads scraper log file to S3
+
+Scraper
+  - Grabs 5000 items from the work queue
+  - For each, scraper extracts geo location.
+  - Formats entries having geo and bulk-loads them into new ES index.
 
 Server
   - Queries the search index for closest points of interest
-  - Offers admin queries
+  - Proxies some ES queries
 
 UI 
   - Web page, using navigator.geolocation if available, manual input if not.
@@ -45,7 +49,6 @@ UI
 ## V1 Development Plan ##
 
 0: Systems
-  - Reduced data size
   - Dynamic state - the data structures in use, those that are being built
   - Logging
   - Alerts
@@ -54,7 +57,7 @@ UI
 1: Refine the Crawler
   - Crawler runs on a schedule.
   - Crawler runs from start to finish 
-  - Crawler supports multiple languages
+  - Crawler supports English, Italian, and German.
 
 2: Refine the Scraper
   Scraper control doesn't increase max if fewer than max were caught last time.

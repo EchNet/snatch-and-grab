@@ -1,5 +1,9 @@
 /* app.js */
 
+var winston = require("winston");
+winston.remove(winston.transports.Console);
+
+
 //
 // Indispensable.
 //
@@ -56,7 +60,7 @@ function seedWorkQueue(app, which) {
 
   function openWorkQueue(service) {
     var kue = require("kue");
-    console.log("Initializing", which);
+    winston.info("Initializing", which);
     var conf = app.config[which];
     var queue = kue.createQueue(conf);
 
@@ -67,7 +71,7 @@ function seedWorkQueue(app, which) {
 
     function removeJobs(err, ids) {
       if (err) {
-        console.log("error clearing queue", err);
+        winston.error("error clearing queue", err);
       }
       if (ids) {
         ids.forEach(function(id) {
@@ -80,7 +84,7 @@ function seedWorkQueue(app, which) {
 
     function requeueJobs(err, ids) {
       if (err) {
-        console.log("error restarting queue", err);
+        winston.error("error restarting queue", err);
       }
       if (ids) {
         ids.forEach(function(id) {
@@ -94,7 +98,7 @@ function seedWorkQueue(app, which) {
     service.queue = queue;
     service.wrapper = {
       enqueue: function(uri, callback) {
-        console.log("enqueue", uri);
+        winston.info("enqueue", uri);
         queue.create("job", { uri: uri }).removeOnComplete(true).save(callback);
       },
       process: function(worker) {
@@ -158,7 +162,7 @@ function seedWorkQueue(app, which) {
 function seedChecklist(app) { 
 
   function openChecklist(service, callback) {
-    console.log("Initializing checklist...");
+    winston.info("Initializing checklist...");
     var redis = require("redis");
     var redisConfig = app.config.checklist.redis;
     var redisClient = redis.createClient({
@@ -281,17 +285,17 @@ function closeAllServices(app, done) {
 function exit(app, status) {
   closeAllServices(app, function() {
     status = status || 0;
-    console.log(app.config.params.component, "exiting", "(" + status + ")");
+    winston.info("exiting (" + status + ")");
     process.exit(status);
   });
 }
 
 function abort(app, msg, error) {
   if (error) {
-    console.log(msg, error);
+    winston.error(msg, error);
   }
   else {
-    console.log(msg);
+    winston.error(msg);
   }
   exit(app, 1);
 }
@@ -325,7 +329,8 @@ function App(component) {
   self.exit = function() { exit(self); }
   self.abort = function(msg, error) { abort(self, msg, error); }
 
-  console.log(component, "starting");
+  winston.add(winston.transports.File, { filename: "logs/" + component + ".log" });
+  winston.log("info", "starting");
 }
 
 module.exports = {

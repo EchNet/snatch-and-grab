@@ -14,7 +14,8 @@
     "extend": "*",
     "request": "*",
     "html-entities": "*",
-    "express": "*"
+    "express": "*",
+    "winston": "*"
   },
   "devDependencies": {}
 }

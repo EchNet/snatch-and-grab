@@ -54,10 +54,13 @@ TBD
 
 - BUG: final "exiting" message is not output by winston in the abort case
 - Figure out how dynamic system state is stored.
-- Crawler uploads to S3
-- List is downloadable through website
-- Figure out how to do system alerts.
+- Set up S3 bucket for upload and web access.
+- Figure out how centralized system control happens.
+- Crawler uploads to S3 optionally
+- Google Map integration
 - Bring in nginx
+- List is downloadable through website
+- Figure out how to do system alerts, use case: .
 - Run crawler on a schedule.
 - Scraper is driven by URI list
 - Condense the scraper and the indexer phases into one, bulking scrapes as well as index upserts.
@@ -69,15 +72,17 @@ TBD
 - Drop Redis from the picture
 - BUG: Scraper control should not increase max if fewer than max were caught last time.
 - BUG: Scraper control sometimes requeues pages.
-- Add support for German
 - Add a unit testing framework
 - BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
 - Add categorization: city, monument, radio station, incident
 - Filter query by category (point of interest, region, other)
-- Refine query: show distance and direction for each match
+- Refine query: show distance for each match
+- Refine query: filter out faraway stuff
 - Add tiers to API results: close by, further, a short walk away.
 - Query takes language parameter.
 - Query refreshes dynamic configuration periodically.
 - UI supports a language setting.
 - UI supports tiers.
-- UI enables manual input.
+- Add support for German
+- Test on Safari
+- Test on IE

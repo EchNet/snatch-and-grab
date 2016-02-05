@@ -2,8 +2,8 @@
 <head>
 <title>WHAT HAVE WE HERE?</title>
 <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+</head>
 <script type="text/javascript">
-
 function showMessage(message, append) {
   if (!append) {
     $(".message").remove();
@@ -16,7 +16,7 @@ function initUi(data) {
     showMessage("Sorry, there was a problem looking up what's here.", 1); 
   }
   else if (data.results && data.results.length) {
-    $("#ui").append($("<p>").text("What we have here..."));
+    $("#ui").append($("<p>").text("What's there..."));
     for (var i = 0; i < data.results.length; ++i) {
       var result = data.results[i];
       $("#ui")
@@ -28,7 +28,7 @@ function initUi(data) {
     }
   }
   else {
-    showMessage("Sorry, there doesn't seem to be anything interesting nearby.");
+    showMessage("There doesn't seem to be anything interesting in the area.");
   }
 }
 
@@ -48,31 +48,27 @@ function askServer(latitude, longitude) {
   });
 }
 
-function doGeo(geolocation) {
-  geolocation.getCurrentPosition(function(position) {
-    var latitude = position.coords.latitude, longitude = position.coords.longitude;
-    showMessage("You are at " + latitude + ", " + longitude);
-    askServer(latitude, longitude);
-  }, function(error) {
-    showMessage("Sorry, there was some problem finding your location.");
-  });
-}
-
 $(function() {
-  if ("geolocation" in navigator) {
-    showMessage("Finding your location...");
-    doGeo(navigator.geolocation);
-  }
-  else {
-    showMessage("Sorry, geolocation is not available in this browser");
-  }
+  $("#submitButton").click(function() {
+    var lat = parseFloat($("#latitudeInput").val());
+    var lon = parseFloat($("#longitudeInput").val());
+    if (!isNaN(lat) && !isNaN(lon)) {
+      $("#ui").empty();
+      askServer(lat, lon);
+    }
+    else {
+      showMessage("You have to enter decimal numbers for latitude and longitude, oaf.");
+    }
+  });
 });
 </script>
-</head>
 <body>
-<h1>WHAT HAVE WE HERE?</h1>
-<p class="message">Loading...</p>
+<h1>WHAT HAVE WE THERE?</h1>
+<p>Enter location below.  Sorry, you have to type the values in decimal for now.</p>
+<p><span>Latitude:</span> <input id="latitudeInput"/> </p>
+<p><span>Longitude:</span> <input id="longitudeInput"/> </p>
+<p><button id="submitButton">Search</button></p>
 <p id="ui"></p>
-<p>If you'd prefer to enter a location manually, <a href="there.html">click here.</a>
+<p>To return to the main page, <a href=".">click here.</a>
 </body>
 </html>

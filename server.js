@@ -47,7 +47,9 @@ server.get("/whwh", function (req, res) {
                 // Distance would sure be nice.
                 score: hit._score
               };
-            });
+            }).filter(function(val) {
+              return val != null;
+            });;
           }
           return null;
         })());

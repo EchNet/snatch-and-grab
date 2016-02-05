@@ -15,7 +15,8 @@
     "request": "*",
     "html-entities": "*",
     "express": "*",
-    "winston": "*"
+    "winston": "*",
+    "winston-daily-rotate-file": "*"
   },
   "devDependencies": {}
 }

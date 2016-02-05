@@ -3,6 +3,7 @@
 var winston = require("winston");
 winston.exitOnError = false;
 winston.remove(winston.transports.Console);
+var WinstonDailyRotateFile = require("winston-daily-rotate-file");
 
 //
 // Indispensable.
@@ -296,8 +297,8 @@ function abort(app, msg, error) {
 }
 
 function initLog(app) {
-  var logName = "logs/" + app.component + "-" + app.config.params.site + ".log";
-  winston.add(winston.transports.File, { filename: logName });
+  var logName = app.component + "-" + app.config.params.site + ".log";
+  winston.add(WinstonDailyRotateFile, { dirname: "logs", filename: logName });
   winston.log("info", "starting");
 }
 

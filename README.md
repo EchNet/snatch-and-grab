@@ -52,7 +52,6 @@ TBD
 
 ## V1 TODO ##
 
-- Rotate log files
 - BUG: final "exiting" message is not output by winston in the abort case
 - Figure out how dynamic system state is stored.
 - Crawler uploads to S3

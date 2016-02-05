@@ -18,11 +18,11 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
     var uri = job.data.uri;
     db.collection.findOne({ uri: uri }, function(err, record) {
       if (err) {
-        console.log(uri, "query error", err);
+        app.error("query error", { uri: uri, error: err });
         done();
       }
       else if (!record) {
-        console.log(uri, "no such record");
+        app.error("no such record", { uri: uri });
         done();
       }
       else {
@@ -34,7 +34,7 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
           followRedirect: false
         }, function(err, response, text) {
           if (err) {
-            console.log(uri, "request error", err);
+            app.error("request error", { uri: uri, error: err });
             done();
           }
           else {
@@ -47,7 +47,7 @@ app.open([ "scraperQueue", "db" ], function(queue, db) {
                 response.headers["content-type"] == "text/html; charset=UTF-8") {
               record.content = scrapeText(text);
             }
-            console.log(uri, response.statusCode, priorUpdatedAt ? "rescrape" : "first scrape", record.content ? "GEO" : "");
+            app.info(priorUpdatedAt ? "rescrape" : "first scrape", { uri: uri, statusCode: response.statusCode, geo: !!record.content });
             db.collection.update({ uri: uri }, record, done);
           }
         });

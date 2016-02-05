@@ -105,5 +105,5 @@ server.get("/stats", function(req, res) {
 });
 
 server.listen(app.config.web.port, function () {
-  console.log("Listening on port " + app.config.web.port);
+  app.info("Listening on port " + app.config.web.port);
 });

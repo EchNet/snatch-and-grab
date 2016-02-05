@@ -29,6 +29,7 @@ app.open([], function() {
   (function work() {
     var uri = nextUri;
     if (uri == null) {
+      app.info("end of listing");
       outFile.on("finish", function() {
         app.exit(0);
       });
@@ -37,19 +38,20 @@ app.open([], function() {
     else {
       nextUri = null;
       // Issue a Web page request.
+      var url = host + uri;
       request({
-        url: host + uri,
+        url: url,
         timeout: timeout,
         followRedirect: false
       }, function(error, response, text) {
         if (error) {
-          app.abort(uri + ": request error", error);
+          app.abort(url + ": request error", error);
         }
         else if (response.statusCode != 200) {
-          app.abort(uri + ": bad HTTP status code " + response.statusCode);
+          app.abort(url + ": bad HTTP status code " + response.statusCode);
         }
-        else if (response.headers["content-type"] != "text/html; charset=UTF-8") {
-          app.abort(uri + ": bad content type " + response.headers["content-type"]);
+        else if (!/^text/.match(response.headers["content-type"])) {
+          app.abort(url + ": bad content type " + response.headers["content-type"]);
         }
         else {
           // Handle Web page response.

@@ -34,7 +34,7 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
 
   // Create the index and specify its metadata.
   function createIndex(callback) {
-    console.log("creating index", indexName);
+    app.info("creating index", { indexName: indexName });
     // Create the mappings for the index.  Define the location field.
     elasticsearch.createIndex(indexName, {
       mappings: {
@@ -67,11 +67,11 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
           app.abort("mongdo cursor failed", err);
         }
         else if (!item) {
-          console.log("Indexed items:", indexCount);
+          app.info("Indexed items", { indexCount: indexCount });
           callback();
         }
         else {
-          console.log("insert", item.uri);
+          app.info("insert", { uri: item.uri });
           ++indexCount;
           elasticsearch.insert(indexName, docType, reformatItem(item), next);
         }
@@ -85,7 +85,7 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
     var buffer = [];
     function flush(callback) {
       elasticsearch.bulkInsert(indexName, docType, buffer, function() {
-        console.log("Indexed items:", indexCount);
+        app.info("Indexed items", { indexCount: indexCount });
         buffer = [];
         callback();
       });
@@ -104,7 +104,7 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
           }
         }
         else {
-          console.log("add", item.uri);
+          app.info("add", { uri: item.uri });
           ++indexCount;
           buffer.push(reformatItem(item));
           if (indexCount % chunkSize == 0) {

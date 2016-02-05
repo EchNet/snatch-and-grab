@@ -21,9 +21,6 @@ function crawlForNextLink(text, crawler) {
   if (match = nextLinkInContextRegex.exec(text)) {
     crawler.crawl(fixUri(match[1]));
   }
-  else {
-    console.log("no next page... is this the end?");
-  }
 }
 
 function crawlForArticleLinks(text, crawler) {

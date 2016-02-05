@@ -52,9 +52,9 @@ TBD
 
 ## V1 TODO ##
 
-- Figure out how dynamic system state is stored.
-- Apply a consistent logging pattern throughout.
 - Rotate log files
+- BUG: final "exiting" message is not output by winston in the abort case
+- Figure out how dynamic system state is stored.
 - Crawler uploads to S3
 - List is downloadable through website
 - Figure out how to do system alerts.

@@ -57,10 +57,10 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
       function(done) {
         queue.inactiveCount(function(err, total) {
           if (err) {
-            console.log("error accessing scraper queue", err);
+            app.error("error accessing scraper queue", { error: err });
           }
           else {
-            console.log("waiting scrape jobs", total);
+            app.info("waiting scrape jobs", { inactive: total });
             if (total == 0 && scrapesPerQuantum) {
               // As long as scraper keeps up, increase the rate by 20%. 
               scrapesPerQuantum = Math.round(scrapesPerQuantum * 1.2);
@@ -82,7 +82,7 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
           done();
         }
         else {
-          console.log("fetching unscraped, max", max);
+          app.info("fetching unscraped", { max: max });
           getUnscrapedUris(uris, max, done);
         }
       },
@@ -91,7 +91,7 @@ app.open([ "db", "scraperQueue" ], function(db, queue) {
           done();
         }
         else {
-          console.log("fetching stale, max", max);
+          app.info("fetching stale", { max: max });
           getStaleUris(uris, max, done);
         }
       },

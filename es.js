@@ -3,7 +3,6 @@
 var elasticsearch = require("elasticsearch");
 
 function openElasticSearch(config, errorHandler) {
-  console.log("Initializing ElasticSearch client...", config);
 
   var client = new elasticsearch.Client(config);
 
@@ -104,7 +103,6 @@ function openElasticSearch(config, errorHandler) {
         }
       }).then(callback, function(err) {
         // TODO: report error to client
-        console.log(err);
       });
     }
   };

@@ -1,8 +1,8 @@
 /* app.js */
 
 var winston = require("winston");
+winston.exitOnError = false;
 winston.remove(winston.transports.Console);
-
 
 //
 // Indispensable.
@@ -71,7 +71,7 @@ function seedWorkQueue(app, which) {
 
     function removeJobs(err, ids) {
       if (err) {
-        winston.error("error clearing queue", err);
+        winston.warn("error clearing queue", err);
       }
       if (ids) {
         ids.forEach(function(id) {
@@ -84,7 +84,7 @@ function seedWorkQueue(app, which) {
 
     function requeueJobs(err, ids) {
       if (err) {
-        winston.error("error restarting queue", err);
+        winston.warn("error restarting queue", err);
       }
       if (ids) {
         ids.forEach(function(id) {
@@ -285,19 +285,20 @@ function closeAllServices(app, done) {
 function exit(app, status) {
   closeAllServices(app, function() {
     status = status || 0;
-    winston.info("exiting (" + status + ")");
+    winston.info("exiting", { status: status });
     process.exit(status);
   });
 }
 
 function abort(app, msg, error) {
-  if (error) {
-    winston.error(msg, error);
-  }
-  else {
-    winston.error(msg);
-  }
+  winston.error(msg, error ? { error: error } : undefined);
   exit(app, 1);
+}
+
+function initLog(app) {
+  var logName = "logs/" + app.component + "-" + app.config.params.site + ".log";
+  winston.add(winston.transports.File, { filename: logName });
+  winston.log("info", "starting");
 }
 
 //
@@ -329,8 +330,13 @@ function App(component) {
   self.exit = function() { exit(self); }
   self.abort = function(msg, error) { abort(self, msg, error); }
 
-  winston.add(winston.transports.File, { filename: "logs/" + component + ".log" });
-  winston.log("info", "starting");
+  self.log = winston.log;
+  self.debug = winston.debug;
+  self.info = winston.info;
+  self.warn = winston.warn;
+  self.error = winston.error;
+
+  initLog(this);
 }
 
 module.exports = {

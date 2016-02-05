@@ -16,7 +16,8 @@
     "html-entities": "*",
     "express": "*",
     "winston": "*",
-    "winston-daily-rotate-file": "*"
+    "winston-daily-rotate-file": "*",
+    "geolib": "*"
   },
   "devDependencies": {}
 }

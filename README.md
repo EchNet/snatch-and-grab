@@ -76,8 +76,6 @@ TBD
 - BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
 - Add categorization: city, monument, radio station, incident
 - Filter query by category (point of interest, region, other)
-- Refine query: show distance for each match
-- Refine query: filter out faraway stuff
 - Add tiers to API results: close by, further, a short walk away.
 - Query takes language parameter.
 - Query refreshes dynamic configuration periodically.

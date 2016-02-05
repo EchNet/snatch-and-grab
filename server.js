@@ -2,6 +2,7 @@
 
 var express = require("express");
 var extend = require("extend");
+var geolib = require("geolib");
 
 var App = require("./app").App;
 
@@ -43,9 +44,9 @@ server.get("/whwh", function (req, res) {
               return {
                 url: app.config.site.host + hit._source.uri,
                 title: hit._source.title,
-                location: hit._source.location,
-                // Distance would sure be nice.
-                score: hit._score
+                loc: hit._source.location,
+                distance: geolib.getDistance({ latitude: latitude, longitude: longitude },
+                  { latitude: hit._source.location[1], longitude: hit._source.location[0] }) + "m"
               };
             }).filter(function(val) {
               return val != null;

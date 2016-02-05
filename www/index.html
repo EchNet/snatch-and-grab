@@ -2,66 +2,47 @@
 <head>
 <title>WHAT HAVE WE HERE?</title>
 <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="whwh.js"></script>
 <script type="text/javascript">
 
-function showMessage(message, append) {
-  if (!append) {
-    $(".message").remove();
+$(function() {
+  
+  function showMessage(message, append) {
+    if (!append) {
+      $(".message").remove();
+    }
+    $("#ui").before($("<p>").attr("class", "message").text(message));
   }
-  $("#ui").before($("<p>").attr("class", "message").text(message));
-}
 
-function initUi(data) {
-  if (data.status != "ok") {
-    showMessage("Sorry, there was a problem looking up what's here.", 1); 
-  }
-  else if (data.results && data.results.length) {
-    $("#ui").append($("<p>").text("What we have here..."));
-    for (var i = 0; i < data.results.length; ++i) {
-      var result = data.results[i];
-      $("#ui")
-        .append($("<p>")
-          .attr("class", "result")
-          .append($("<a>")
-            .attr("href", result.url)
-            .text(result.title)));
+  function initUi(data) {
+    if (data.status != "ok") {
+      showMessage("Sorry, there was a problem looking up what's here.", 1); 
+    }
+    else if (data.results && data.results.length) {
+      $("#ui").append($("<p>").text("What we have here..."));
+      whwh.renderResults(data.results, $("#ui"));
+    }
+    else {
+      showMessage("Sorry, there doesn't seem to be anything interesting nearby.");
     }
   }
-  else {
-    showMessage("Sorry, there doesn't seem to be anything interesting nearby.");
-  }
-}
 
-function askServer(latitude, longitude) {
-  $.ajax({
-    method: "GET",
-    url: "/whwh",
-    data: {
-      lat: latitude,
-      long: longitude
-    },
-    dataType: "json"
-  }).done(function(data) {
-    initUi(data);
-  }).fail(function(hdr, error) {
-    showMessage("Sorry, there was a problem reaching the What Have We Here? server", 1); 
-  });
-}
-
-function doGeo(geolocation) {
-  geolocation.getCurrentPosition(function(position) {
-    var latitude = position.coords.latitude, longitude = position.coords.longitude;
-    showMessage("You are at " + latitude + ", " + longitude);
-    askServer(latitude, longitude);
-  }, function(error) {
-    showMessage("Sorry, there was some problem finding your location.");
-  });
-}
-
-$(function() {
-  if ("geolocation" in navigator) {
-    showMessage("Finding your location...");
-    doGeo(navigator.geolocation);
+  var responded = false;
+  if (whwh.getLocation(function(err, geoloc) {
+    responded = true;
+    if (err) {
+      showMessage("Sorry, there was some problem finding your location.");
+    }
+    else {
+      showMessage("You are at " + whwh.printLocation(geoloc));
+      whwh.queryLocation(geoloc)
+        .done(initUi)
+        .fail(function(hdr, error) {
+          showMessage("Sorry, there was a problem reaching the What Have We Here? server", 1); 
+        });
+    }
+  })) {
+    if (!responded) showMessage("Finding your location...");
   }
   else {
     showMessage("Sorry, geolocation is not available in this browser");

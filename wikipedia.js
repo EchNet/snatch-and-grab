@@ -4,8 +4,6 @@ var geoformat = require("./geoformat");
 var extend = require("extend");
 var AllHtmlEntities = require("html-entities").AllHtmlEntities;
 
-var originUri = "/wiki/Special:AllPages";
-
 function looksLikeArticlePage(text) {
   return text.indexOf(" ns-subject page") > 0;
 }
@@ -14,27 +12,43 @@ function fixUri(uri) {
   return uri.replace(/\&amp\;/g, "&");
 }
 
-function crawlForNextLink(text, crawler) {
-  var nextLinkInContextRegex =
-    /<a href="(\/w\/index\.php\?title\=Special\:AllPages\&amp;from=[^"]*)" title="Special\:AllPages">Next /;
-  var match;
-  if (match = nextLinkInContextRegex.exec(text)) {
-    crawler.crawl(fixUri(match[1]));
-  }
-}
+function crawlTextFunction(special, allPages, next) {
 
-function crawlForArticleLinks(text, crawler) {
-  var articleLinkInContextRegex =
-    /<li><a href="(\/wiki\/[^"][^"]*)" title=/g;
-  var match;
-  while (match = articleLinkInContextRegex.exec(text)) {
-    crawler.recognize(fixUri(match[1]));
+  function nextLinkInContextRegex() {
+    return new RegExp(
+      "<a href=\"(\\/w\\/index\\.php\\?title\\=" +
+      special +
+      "\\:" +
+      allPages + 
+      "\\&amp;from=[^\"]*)\" title=\"" + 
+      special + 
+      "\\:" +
+      allPages +
+      "\">" + 
+      next +
+      " ");
   }
-}
 
-function crawlText(text, crawler) {
-  crawlForNextLink(text, crawler);
-  crawlForArticleLinks(text, crawler);
+  function crawlForNextLink(text, crawler) {
+    var match;
+    if (match = nextLinkInContextRegex().exec(text)) {
+      crawler.crawl(fixUri(match[1]));
+    }
+  }
+
+  function crawlForArticleLinks(text, crawler) {
+    var articleLinkInContextRegex =
+      /<li><a href="(\/wiki\/[^"][^"]*)" title=/g;
+    var match;
+    while (match = articleLinkInContextRegex.exec(text)) {
+      crawler.recognize(fixUri(match[1]));
+    }
+  }
+
+  return function(text, crawler) {
+    crawlForNextLink(text, crawler);
+    crawlForArticleLinks(text, crawler);
+  };
 }
 
 function scrapeText(text) {
@@ -96,7 +110,6 @@ function scrapeText(text) {
 }
 
 module.exports = {
-  origin: originUri,
-  crawlText: crawlText,
+  crawlTextFunction: crawlTextFunction,
   scrapeText: scrapeText
 };

@@ -16,11 +16,7 @@ function crawlTextFunction(special, allPages, next) {
 
   function nextLinkInContextRegex() {
     return new RegExp(
-      "<a href=\"(\\/w\\/index\\.php\\?title\\=" +
-      special +
-      "\\:" +
-      allPages + 
-      "\\&amp;from=[^\"]*)\" title=\"" + 
+      "<a href=\"(\\/w\\/index\\.php\\?title\\=[^:]+\\:[^\"]+\\&amp;from=[^\"]*)\" title=\"" + 
       special + 
       "\\:" +
       allPages +

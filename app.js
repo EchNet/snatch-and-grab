@@ -284,10 +284,11 @@ function closeAllServices(app, done) {
 // Graceful app shutdown.
 //
 function exit(app, status) {
-  closeAllServices(app, function() {
-    status = status || 0;
-    winston.info("exiting", { status: status });
-    process.exit(status);
+  status = status || 0;
+  winston.log("exiting", { status: status }, function() {
+    closeAllServices(app, function() {
+      process.exit(status);
+    });
   });
 }
 
@@ -316,6 +317,7 @@ function App(component) {
 
   self.component = component;
   self.args = args;
+  self.params = config.params;
   self.config = config;
   self.services = {
     db: seedDatabase(self),

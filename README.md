@@ -55,6 +55,7 @@ file (default=data/crawler.out), one entry per line.
 Crawler
 
 - Write cron-able crawl script including S3 upload
+- Periodically git fetch also!
 - Deploy regular crawl (English)
 - Add additional regular crawls (Italian, German, Spanish, French)
 
@@ -103,7 +104,6 @@ iOS app
 - Add a unit testing framework for bug fixing!
 - BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
 - BUG: Scraper control should not increase max if fewer than max were caught last time.
-- BUG: Scraper control sometimes requeues pages.
-- BUG: final "exiting" message is not output by winston in the abort case
+- BUG: final "exiting" message is not output by winston!
 - BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
 - BUG: at lat 42 lon 30 there's https://en.wikipedia.org/wiki/MV_Mefk%C3%BCre which has no title, also one at 42,18

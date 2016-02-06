@@ -12,7 +12,7 @@ var host = app.config.site.host;
 var originUri = app.config.site.origin;
 var timeout = app.config.request.timeout;
 
-var outFileName = app.args.out || "data/crawler.out";
+var outFileName = app.args.out || ("data/" + app.params.site + ".list");
 var outFile = fs.createWriteStream(outFileName, { encoding: "utf8" });
 outFile.on("error", function(err) {
   app.abort("Error writing to " + outFile, err);
@@ -39,6 +39,7 @@ app.open([], function() {
       nextUri = null;
       // Issue a Web page request.
       var url = host + uri;
+      app.info("request", { url: url });
       request({
         url: url,
         timeout: timeout,
@@ -50,10 +51,12 @@ app.open([], function() {
         else if (response.statusCode != 200) {
           app.abort(url + ": bad HTTP status code " + response.statusCode);
         }
-        else if (!/^text/.match(response.headers["content-type"])) {
+        else if (!/^text/.exec(response.headers["content-type"])) {
           app.abort(url + ": bad content type " + response.headers["content-type"]);
         }
         else {
+          app.info("response", { url: url });
+          var recogCount = 0;
           // Handle Web page response.
           crawlText(text, {
             crawl: function(hrefUri) {
@@ -61,8 +64,10 @@ app.open([], function() {
             },
             recognize: function(hrefUri) {
               outFile.write(hrefUri + "\n");
+              ++recogCount;
             }
           });
+          app.info("recognized " + recogCount);
           work();
         }
       });

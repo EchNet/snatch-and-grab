@@ -37,6 +37,8 @@ There's also a Web UI.
 
 ## Commands ## 
 
+All commands log their output to the logs folder.
+
 ### Crawler ###
 
   node crawler --env=dev --out=outFileName --site=lang\_wikipedia
@@ -44,43 +46,64 @@ There's also a Web UI.
 Creates a list of all target URIs on the site and writes it to the specified output
 file (default=data/crawler.out), one entry per line.
 
-Logs files are identified by the pattern logs/crawler.log.X.
-
 ### Indexer ###
 
-TBD
+  node indexer --env=dev --dest=url --site=lang\_wikipedia
 
 ## V1 TODO ##
 
-- BUG: final "exiting" message is not output by winston in the abort case
-- Figure out how dynamic system state is stored.
-- Set up S3 bucket for upload and web access.
-- Figure out how centralized system control happens.
-- Crawler uploads to S3 optionally
-- Google Map integration
-- Bring in nginx
-- List is downloadable through website
-- Figure out how to do system alerts, use case: .
-- Run crawler on a schedule.
-- Scraper is driven by URI list
-- Condense the scraper and the indexer phases into one, bulking scrapes as well as index upserts.
-- Add crash recovery to crawler.
-- Eradicate MongoDB code.
-- Run indexer on a schedule.
-- Add scraper support for Italian
-- Add query support for Italian
-- Drop Redis from the picture
-- BUG: Scraper control should not increase max if fewer than max were caught last time.
-- BUG: Scraper control sometimes requeues pages.
-- Add a unit testing framework
-- BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
+Crawler
+
+- Write cron-able crawl script including S3 upload
+- Deploy regular crawl (English)
+- Add additional regular crawls (Italian, German, Spanish, French)
+
+Indexer
+
 - Add categorization: city, monument, radio station, incident
+- Drop MongoDB database!
+- Scrape control is driven by URI list
+- Condense the scraper and the indexer phases into one, bulking scrapes as well as index upserts.
+- Run indexer on a schedule.
+- Add indexer support for additional languages
+- Figure out how dynamic system state is managed
+- Indexer auto-switches to the new index on completion.
+
+Query
+
+- Query pulls index setting from dynamic system state
+- Add query support for additional languages
 - Filter query by category (point of interest, region, other)
 - Add tiers to API results: close by, further, a short walk away.
-- Query takes language parameter.
-- Query refreshes dynamic configuration periodically.
+
+Server
+- Separate API from assets
+- Bring in nginx, proxy API and assets
+- Deploy HTTPS
+
+Client
+- Google Map integration
 - UI supports a language setting.
 - UI supports tiers.
-- Add support for German
 - Test on Safari
 - Test on IE
+- UI beautification
+
+Operations
+- System monitoring
+- Log aggregation
+
+## V2 ##
+
+Android app
+iOS app
+
+## BUGS ##
+
+- Add a unit testing framework for bug fixing!
+- BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
+- BUG: Scraper control should not increase max if fewer than max were caught last time.
+- BUG: Scraper control sometimes requeues pages.
+- BUG: final "exiting" message is not output by winston in the abort case
+- BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
+- BUG: at lat 42 lon 30 there's https://en.wikipedia.org/wiki/MV_Mefk%C3%BCre which has no title, also one at 42,18

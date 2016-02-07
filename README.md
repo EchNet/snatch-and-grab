@@ -54,10 +54,8 @@ file (default=data/crawler.out), one entry per line.
 
 Crawler
 
-- Write cron-able crawl script including S3 upload
-- Periodically git fetch also!
-- Deploy regular crawl (English)
-- Add additional regular crawls (Italian, German, Spanish, French)
+- Set up periodic maintenance of crawl machine: log export, git pull
+- Save AMI of crawl machine
 
 Indexer
 
@@ -65,6 +63,7 @@ Indexer
 - Drop MongoDB database!
 - Scrape control is driven by URI list
 - Condense the scraper and the indexer phases into one, bulking scrapes as well as index upserts.
+- Create indexer AMI
 - Run indexer on a schedule.
 - Add indexer support for additional languages
 - Figure out how dynamic system state is managed

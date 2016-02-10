@@ -298,23 +298,20 @@ function abort(app, msg, error) {
 }
 
 function initLog(app) {
-  var logName = app.component + "-" + app.config.params.site + ".log";
+  var logName = app.component;
+  if (app.config.params.site) {
+    logName += "-" + app.config.params.site;
+  }
+  logName += ".log";
   winston.add(WinstonDailyRotateFile, { dirname: "logs", filename: logName });
   winston.log("info", "starting");
 }
 
 //
-// App constructor.
+// BaseApp constructor.
 //
-function App(component) {
+function BaseApp(component, args, config) {
   var self = this;
-  var args = require("yargs").argv;
-  var config = require("./config.js")({
-    component: component,
-    site: args.site,
-    env: args.env
-  });
-
   self.component = component;
   self.args = args;
   self.params = config.params;
@@ -342,7 +339,34 @@ function App(component) {
   initLog(this);
 }
 
+//
+// App constructor.
+//
+function App(component) {
+  var args = require("yargs").argv;
+  var config = require("./config.js")({
+    component: component,
+    site: args.site,
+    env: args.env
+  });
+  BaseApp.call(this, component, args, config);
+}
+
+//
+// PipelineApp constructor.  Defaults site to en_wikipedia, and that's it.
+//
+function PipelineApp(component) {
+  var args = require("yargs").argv;
+  var config = require("./config.js")({
+    component: component,
+    site: args.site || "en_wikipedia",
+    env: args.env
+  });
+  BaseApp.call(this, component, args, config);
+}
+
 module.exports = {
   App: App,
+  PipelineApp: PipelineApp,
   executeSequence: executeSequence
 };

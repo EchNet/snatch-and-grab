@@ -8,11 +8,18 @@ var App = require("./app").App;
 
 var app = new App("server");
 
+// We're hird-wired to English for the moment..
+var en_wikipedia = require("./en_wikipedia.js");
+
 var server = express();
 
+// Static assets.
 server.use(express.static("www"));
 
+// Geo-search endpoint.
 server.get("/whwh", function (req, res) {
+
+  app.info("request", { uri: "/whwh", query: req.query });
 
   function ok(hits) {
     res.json({ status: "ok", results: hits });
@@ -20,6 +27,20 @@ server.get("/whwh", function (req, res) {
 
   function error(errmsg) {
     res.json({ status: "error", msg: errmsg });
+  }
+
+  function postProcessHits(hits) {
+    return hits.filter(function(hit) {
+      return hit._score > 0;
+    }).map(function(hit) {
+      return {
+        url: en_wikipedia.host + hit._source.uri,
+        title: hit._source.title,
+        loc: hit._source.location,
+        d: geolib.getDistance({ latitude: latitude, longitude: longitude },
+          { latitude: hit._source.location[1], longitude: hit._source.location[0] })
+      };
+    });
   }
 
   var latitude = parseFloat(req.query.lat);
@@ -34,26 +55,17 @@ server.get("/whwh", function (req, res) {
   else {
     app.open([ "system", "elasticsearch" ], function(system, elasticsearch) {
 
-      var indexName = system.index || "pages0";
+      var index = system.index || "pages0";
 
-      elasticsearch.geoFilter(indexName, "page", [ longitude, latitude ], function(results) {
-        ok((function() {
-          if (results.hits && results.hits.hits) {
-            return results.hits.hits.map(function(hit) {
-              if (hit._score == 0) return undefined;
-              return {
-                url: app.config.site.host + hit._source.uri,
-                title: hit._source.title,
-                loc: hit._source.location,
-                d: geolib.getDistance({ latitude: latitude, longitude: longitude },
-                  { latitude: hit._source.location[1], longitude: hit._source.location[0] })
-              };
-            }).filter(function(val) {
-              return val != null;
-            });;
-          }
-          return null;
-        })());
+      var location = [ longitude, latitude ];
+
+      app.info("search query", { index: index, location: location });
+
+      elasticsearch.geoFilter(index, "page", location, function(results) {
+        app.info("search results", { location: location, results: results });
+        var data = results.hits && results.hits.hits ? postProcessHits(results.hits.hits) : [];
+        app.info("response", { uri: "/whwh", data: data });
+        ok(data);
       });
     });
   }
@@ -87,6 +99,7 @@ var statFunctions = {
   }
 };
 
+// Stats endpoint.
 server.get("/stats", function(req, res) {
   var stats = {};
   var tasks = [];

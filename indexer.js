@@ -2,9 +2,9 @@
 
 var request = require("request");
 
-var App = require("./app").App;
+var PipelineApp = require("./app").PipelineApp;
 
-var app = new App("indexer");
+var app = new PipelineApp("indexer");
 
 var docType = "page";
 

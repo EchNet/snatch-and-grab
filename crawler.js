@@ -3,9 +3,9 @@
 var request = require("request");
 var fs = require("fs");
 
-var App = require("./app").App;
+var PipelineApp = require("./app").PipelineApp;
 
-var app = new App("crawler");
+var app = new PipelineApp("crawler");
 
 // Configuration properties
 var host = app.config.site.host;

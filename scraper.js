@@ -4,9 +4,9 @@ var version = "0.1.1";
 
 var request = require("request");
 
-var App = require("./app").App;
+var PipelineApp = require("./app").PipelineApp;
 
-var app = new App("scraper");
+var app = new PipelineApp("scraper");
 
 app.open([ "scraperQueue", "db" ], function(queue, db) {
 

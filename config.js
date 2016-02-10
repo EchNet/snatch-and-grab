@@ -15,7 +15,6 @@ module.exports = function(params) {
   }
 
   params = extend({
-    site: "en_wikipedia",
     component: "server",
     env: getEnv("ENV", "dev")
   }, params);
@@ -27,7 +26,7 @@ module.exports = function(params) {
   return {
     params: params,
 
-    site: require("./" + site + ".js"),
+    site: site && require("./" + site + ".js"),
 
     web: (function() {
       return {

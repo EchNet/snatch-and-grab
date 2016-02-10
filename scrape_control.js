@@ -1,8 +1,8 @@
 /* scrape_control.js */
 
-var App = require("./app").App;
+var PipelineApp = require("./app").PipelineApp;
 
-var app = new App("scrape_control");
+var app = new PipelineApp("scrape_control");
 
 var site = app.config.params.site;
 var scrapeFreshnessTime = app.config.control.scrapeFreshnessTime;

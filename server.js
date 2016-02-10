@@ -45,8 +45,8 @@ server.get("/whwh", function (req, res) {
                 url: app.config.site.host + hit._source.uri,
                 title: hit._source.title,
                 loc: hit._source.location,
-                distance: geolib.getDistance({ latitude: latitude, longitude: longitude },
-                  { latitude: hit._source.location[1], longitude: hit._source.location[0] }) + "m"
+                d: geolib.getDistance({ latitude: latitude, longitude: longitude },
+                  { latitude: hit._source.location[1], longitude: hit._source.location[0] })
               };
             }).filter(function(val) {
               return val != null;

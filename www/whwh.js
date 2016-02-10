@@ -39,7 +39,7 @@
             .append($("<span>")
               .text(" at " + printLocation(result.loc)))
             .append($("<span>")
-              .text(", distance=" + result.distance)));
+              .text(", distance " + result.d + " meter" + (result.d == 1 ? "" : "s"))));
       }
     }
   }

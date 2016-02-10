@@ -78,7 +78,6 @@ Query
 
 Server
 - Separate API from assets
-- Bring in nginx, proxy API and assets
 - Deploy HTTPS
 
 Client

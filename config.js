@@ -31,7 +31,7 @@ module.exports = function(params) {
 
     web: (function() {
       return {
-        port: env == "dev" ? 3300 : 80
+        port: 3300
       }
     })(),
 

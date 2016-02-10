@@ -20,7 +20,7 @@ $(function() {
     }
     else if (data.results && data.results.length) {
       $("#ui").append($("<p>").text("What's there..."));
-      whwh.renderResults(data.results, $("#ui"));
+      whwh.renderFlatResults(data.results, $("#ui"));
     }
     else {
       showMessage("There doesn't seem to be anything interesting in the area.");

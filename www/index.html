@@ -11,7 +11,7 @@ $(function() {
     if (!append) {
       $(".message").remove();
     }
-    $("#ui").before($("<p>").attr("class", "message").text(message));
+    $("#ui").before($("<div>").attr("class", "message").text(message));
   }
 
   function initUi(data) {
@@ -19,8 +19,7 @@ $(function() {
       showMessage("Sorry, there was a problem looking up what's here.", 1); 
     }
     else if (data.results && data.results.length) {
-      $("#ui").append($("<p>").text("What we have here..."));
-      whwh.renderResults(data.results, $("#ui"));
+      whwh.renderTieredResults(data.results, $("#ui"));
     }
     else {
       showMessage("Sorry, there doesn't seem to be anything interesting nearby.");
@@ -49,11 +48,31 @@ $(function() {
   }
 });
 </script>
+<style>
+body {
+  font-family: Arial, Helvetica;
+}
+div {
+  margin: 8px 0px;
+}
+div.tier-results {
+  margin-left: 8px;
+}
+span.h1 {
+  color: #808;
+  font-size: 24px;
+  font-weight: bold;
+}
+span.tier-heading {
+  color: #c06;
+  font-weight: bold;
+}
+</style>
 </head>
 <body>
-<h1>WHAT HAVE WE HERE?</h1>
-<p class="message">Loading...</p>
-<p id="ui"></p>
-<p>If you'd prefer to enter a location manually, <a href="there.html">click here.</a>
+<div><span class="h1">WHAT HAVE WE HERE?</span></div>
+<div class="message">Loading...</div>
+<div id="ui"></div>
+<div>If you'd prefer to enter a location manually, <a href="there.html">click here.</a></div>
 </body>
 </html>

@@ -6,6 +6,10 @@ Version 1.0 crawls only Wikipedia sites!  Supported languages:
 
 - English (en.wikipedia.com)
 - Italian (it.wikipedia.com)
+- German (de.wikipedia.com)
+- Spanish (en.wikipedia.com)
+- French (fr.wikipedia.com)
+- Portuguese (pt.wikipedia.com)
 
 ## Base Software ##
 
@@ -13,11 +17,13 @@ Platform: NodeJS 5.2.0 and NPM
 
 ElasticSearch 2.1.1
 
+Amazon Web Services
+
 Redis (for queueing)  [http://redis.io/download](http://redis.io/download)
  - tested using version 2.6  
  - latest is 3.0
 
-Nginx (coming soon)
+Nginx
 
 ## Architecture ##
 
@@ -60,31 +66,29 @@ Crawler
 Indexer
 
 - Add categorization: city, monument, radio station, incident
-- Drop MongoDB database!
-- Scrape control is driven by URI list
+- Drive scraper by URI list downloaded from S3
+- Make MongoDB database output optional - write to file instead 
 - Condense the scraper and the indexer phases into one, bulking scrapes as well as index upserts.
 - Create indexer AMI
 - Run indexer on a schedule.
 - Add indexer support for additional languages
-- Figure out how dynamic system state is managed
-- Indexer auto-switches to the new index on completion.
+- Indexer updates system configuration with the new index on completion.
 
 Query
 
-- Query pulls index setting from dynamic system state
+- Query pulls index mappings from dynamic system state
 - Add query support for additional languages
 - Filter query by category (point of interest, region, other)
-- Add tiers to API results: close by, further, a short walk away.
 
 Server
-- Separate API from assets
+- Serve assets directly through nginx
+- Set up periodic maintenance of server machine: log export 
 - Deploy HTTPS
 
 Client
 - Google Map integration
 - UI supports a language setting.
-- UI supports tiers.
-- Test on Safari
+- Add enablement instructions.
 - Test on IE
 - UI beautification
 
@@ -101,7 +105,6 @@ iOS app
 
 - Add a unit testing framework for bug fixing!
 - BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
-- BUG: Scraper control should not increase max if fewer than max were caught last time.
 - BUG: final "exiting" message is not output by winston!
 - BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
 - BUG: at lat 42 lon 30 there's https://en.wikipedia.org/wiki/MV_Mefk%C3%BCre which has no title, also one at 42,18

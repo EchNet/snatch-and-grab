@@ -1,5 +1,7 @@
 /* app.js */
 
+var fs = require("fs");
+
 var winston = require("winston");
 winston.exitOnError = false;
 winston.remove(winston.transports.Console);
@@ -233,13 +235,60 @@ function seedElasticSearch(app) {
   return seed;
 }
 
+function jsonFromS3(bucket, key, callback) {
+  var AWS = require("aws-sdk");
+  var s3 = new AWS.S3();
+  s3.getObject({
+    Bucket: bucket,
+    Key: key,
+  }, function(err, data) {
+    if (err) {
+      callback(err);
+    }
+    else {
+      callback(null, JSON.parse(data.Body.toString()));
+    }
+  });
+}
+
 //
 // System configuration connector.
 //
-function seedSystem() { 
+function seedSystem(app) { 
+  var cached = null;
   return {
     open: function(callback) {
-      callback({ index: "pages0" });
+      var config = app.config.system;
+
+      function success() {
+        callback(cached.obj);
+      }
+
+      if (cached && cached.time > new Date().getTime() - config.freshness) {
+        return success();
+      }
+
+      function updateCache(obj) {
+        cached = {
+          obj: obj,
+          time: new Date().getTime()
+        };
+        success();
+      }
+
+      var m = config.location.match(/^s3:\/\/(.*)$/);
+      if (m) {
+        jsonFromS3(m[1], config.fileName, function(err, obj) {
+          if (err) throw err;
+          updateCache(obj);
+        });
+      }
+      else {
+        fs.readFile(config.fileName, "utf8", function(err, data) {
+          if (err) throw err;
+          updateCache(JSON.parse(data));
+        });
+      }
     },
     close: function(callback) {
       callback();
@@ -321,7 +370,7 @@ function BaseApp(component, args, config) {
     crawlerQueue: seedWorkQueue(self, "crawlerQueue"),
     scraperQueue: seedWorkQueue(self, "scraperQueue"),
     elasticsearch: seedElasticSearch(self),
-    system: seedSystem()
+    system: seedSystem(self)
   };
 
   self.executeSequence = executeSequence;

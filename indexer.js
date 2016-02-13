@@ -6,6 +6,7 @@ var PipelineApp = require("./app").PipelineApp;
 
 var app = new PipelineApp("indexer");
 
+var site = app.params.site;
 var docType = "page";
 
 app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
@@ -22,7 +23,7 @@ app.open([ "db", "elasticsearch" ], function(db, elasticsearch) {
   function nextAvailableIndexName(callback) {
     elasticsearch.listIndexes(function(indexes) {
       for (var n = 0; ; ++n) {
-        var name = docType + "s" + n;
+        var name = site + n;
         if (indexes.indexOf(name) < 0) {
           indexName = name;
           break;

@@ -17,7 +17,8 @@
     "express": "*",
     "winston": "*",
     "winston-daily-rotate-file": "*",
-    "geolib": "*"
+    "geolib": "*",
+    "aws-sdk": "*"
   },
   "devDependencies": {}
 }

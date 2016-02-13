@@ -23,10 +23,24 @@ module.exports = function(params) {
   var component = params.component;
   var env = params.env;
 
+  var second = 1000;
+  var minute = second * 60;
+  var hour = minute * 60;
+  var day = hour * 24;
+  var week = day * 7;
+
   return {
     params: params,
 
     site: site && require("./" + site + ".js"),
+
+    system: (function() {
+      return {
+        location: env == "prod" ? "s3://whwh" : ".",
+        fileName: "config/system.json",
+        freshness: 5 * minute 
+      };
+    })(),
 
     web: (function() {
       return {
@@ -121,11 +135,6 @@ module.exports = function(params) {
     })(),
 
     control: (function() {
-      var second = 1000;
-      var minute = second * 60;
-      var hour = minute * 60;
-      var day = hour * 24;
-      var week = day * 7;
       return {
         quantum: second * 20,
         scrapeFreshnessTime: env == "dev" ? day : week,

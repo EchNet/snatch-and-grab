@@ -8,9 +8,6 @@ var App = require("./app").App;
 
 var app = new App("server");
 
-// We're hird-wired to English for the moment..
-var en_wikipedia = require("./en_wikipedia.js");
-
 var server = express();
 
 // Static assets.
@@ -29,12 +26,27 @@ server.get("/whwh", function (req, res) {
     res.json({ status: "error", msg: errmsg });
   }
 
+  var latitude = parseFloat(req.query.lat);
+  var longitude = parseFloat(req.query.long);
+  var lang = req.query.lang || "en";
+
+  if (isNaN(latitude)) {
+    return error("latitude must be a number");
+  }
+  if (isNaN(longitude)) {
+    return error("longitude must be a number");
+  }
+
+  // just Wikipedia for now
+  var site = lang + "_wikipedia";
+  var siteInfo = require("./" + site);
+
   function postProcessHits(hits) {
     return hits.filter(function(hit) {
       return hit._score > 0;
     }).map(function(hit) {
       return {
-        url: en_wikipedia.host + hit._source.uri,
+        url: siteInfo.host + hit._source.uri,
         title: hit._source.title,
         loc: hit._source.location,
         d: geolib.getDistance({ latitude: latitude, longitude: longitude },
@@ -43,32 +55,21 @@ server.get("/whwh", function (req, res) {
     });
   }
 
-  var latitude = parseFloat(req.query.lat);
-  var longitude = parseFloat(req.query.long);
+  app.open([ "system", "elasticsearch" ], function(system, elasticsearch) {
 
-  if (isNaN(latitude)) {
-    error("latitude must be a number");
-  }
-  else if (isNaN(longitude)) {
-    error("longitude must be a number");
-  }
-  else {
-    app.open([ "system", "elasticsearch" ], function(system, elasticsearch) {
+    var index = system.sites[site].index;
 
-      var index = system.index || "pages0";
+    var location = [ longitude, latitude ];
 
-      var location = [ longitude, latitude ];
+    app.info("search query", { index: index, location: location });
 
-      app.info("search query", { index: index, location: location });
-
-      elasticsearch.geoFilter(index, "page", location, function(results) {
-        app.info("search results", { location: location, results: results });
-        var data = results.hits && results.hits.hits ? postProcessHits(results.hits.hits) : [];
-        app.info("response", { uri: "/whwh", data: data });
-        ok(data);
-      });
+    elasticsearch.geoFilter(index, "page", location, function(results) {
+      app.info("search results", { location: location, results: results });
+      var data = results.hits && results.hits.hits ? postProcessHits(results.hits.hits) : [];
+      app.info("response", { uri: "/whwh", data: data });
+      ok(data);
     });
-  }
+  });
 });
 
 var statFunctions = {

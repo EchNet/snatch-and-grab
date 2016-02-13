@@ -1,0 +1,102 @@
+<html>
+<head>
+<title>Categorizer</title>
+<script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+<script type="text/javascript">
+
+$(function() {
+
+  var state = {
+    pageIndex: -1,
+    pageUri: null,
+    pageCategory: null,
+    nPages: 0,
+    categories: []
+    uncategorized: 0,
+  };
+
+  function updateUi() {
+    $("#uncategorized").text(state.uncategorized);
+    $("#uri").text(uri).attr("href", uri);
+    if ($("#categoriesMenu").children().length != state.categories.length) {
+      $("#categoriesMenu").empty();
+    }
+  }
+
+  function next(which) {
+    $.ajax({
+      method: "GET",
+      url: "/" + which,
+      data: { start: state.recordIndex },
+      dataType: "json"
+    })
+    .done(updateUi);
+  }
+  
+  function categorize() {
+    $.ajax({
+      method: "GET",
+      url: "/cat",
+      data: data,
+      dataType: "json"
+    })
+    .done(function(data) {
+      if (data.status != "ok") {
+        alert("Sorry, there was a problem."); 
+      }
+      else {
+        state = data;
+        updateUi();
+      }
+    })
+    .fail(function(hdr, error) {
+      alert("Sorry, there was a problem reaching the server"); 
+    });
+  }
+
+});
+</script>
+<style>
+body {
+  font-family: Arial, Helvetica;
+}
+div {
+  margin: 8px 0px;
+}
+div.tier-results {
+  margin-left: 8px;
+}
+span.h1 {
+  color: #808;
+  font-size: 24px;
+  font-weight: bold;
+}
+span.tier-heading {
+  color: #c06;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div><span class="h1">Categorizer</span></div>
+<div>
+<div class="page">
+  <span>Page #<span id="pageNumber"></span> of <span id="nPages"></span></span>
+  <a id="pageLink"></a>
+  <span id="pageCat"></span>
+</div>
+<div class="pageNav">
+  <button id="next">Next</button>
+  <button id="nextUnmarked">Next Unmarked</button>
+  <button id="nextUnknown">Next Unknown</button>
+</div>
+<div class="categories">
+  <select id="categoriesMenu"></select>
+  <span>New:</span>
+  <input id="catInput"/>
+</div>
+<div class="functions">
+  <button id="categorize">Categorize</button>
+</div>
+</body>
+</html>

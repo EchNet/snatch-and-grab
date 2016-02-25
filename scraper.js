@@ -1,59 +1,95 @@
 /* scraper.js */
 
-var version = "0.1.1";
-
+var fs = require("fs");
 var request = require("request");
+var lineReader = require("line-reader");
 
 var PipelineApp = require("./app").PipelineApp;
-
 var app = new PipelineApp("scraper");
 
-app.open([ "scraperQueue", "db" ], function(queue, db) {
+var timeout = app.config.request.timeout;
+var scrapeText = app.config.site.scrapeText;
 
-  var host = app.config.site.host;
-  var timeout = app.config.request.timeout;
-  var scrapeText = app.config.site.scrapeText;
+var inFileName = app.args["in"];
+var outFileName = app.args.out || ("data/" + app.params.site + ".data");
+var outFile = fs.createWriteStream(outFileName, { flags: "w+" });
 
-  function work(job, done) {
-    var uri = job.data.uri;
-    db.collection.findOne({ uri: uri }, function(err, record) {
-      if (err) {
-        app.error("query error", { uri: uri, error: err });
-        done();
-      }
-      else if (!record) {
-        app.error("no such record", { uri: uri });
-        done();
-      }
-      else {
-        var priorUpdatedAt = record.updated_at;
-        var priorContent = record.content;
-        request({
-          url: host + uri,
-          timeout: timeout,
-          followRedirect: false
-        }, function(err, response, text) {
+app.open("scraperQueue", function(queue) {
+
+  function enqueue(uri) {
+    queue.enqueue({ uri: uri });
+  }
+
+  function seedQueue(done) {
+    if (inFileName) {
+      queue.clear(function() {
+        lineReader.eachLine(inFileName, function(line, last) {
+          enqueue(line);
+          if (last) {
+            return false;
+          }
+          return !last;
+        }).then(function(err) {
           if (err) {
-            app.error("request error", { uri: uri, error: err });
-            done();
+            throw err;
           }
-          else {
-            record.updated_at = new Date();
-            if (response.statusCode >= 300 && response.statusCode < 500) {
-              // Throw out any prior content.
-              record["$unset"] = { "content": "" };
-            }
-            else if (response.statusCode == 200 &&
-                response.headers["content-type"] == "text/html; charset=UTF-8") {
-              record.content = scrapeText(text);
-            }
-            app.info(priorUpdatedAt ? "rescrape" : "first scrape", { uri: uri, statusCode: response.statusCode, geo: !!record.content });
-            db.collection.update({ uri: uri }, record, done);
-          }
+          done();
         });
-      }
+      });
+    }
+    else {
+      queue.restartJobs(done);
+    }
+  }
+
+  function getToWork() {
+    queue.process(function(job, done) {
+      var uri = job.data.uri;
+      request({
+        url: host + uri,
+        timeout: timeout,
+        followRedirect: false
+      }, function(err, response, text) {
+        if (err) {
+          app.error("request error", { uri: uri, error: err });
+          enqueue(uri);  // requeue
+        }
+        else if (response.statusCode != 200) {
+          app.warn("bad status code", { uri: uri, error: err });
+          done();
+        }
+        else if (!/^text/.exec(response.headers["content-type"])) {
+          app.warn("unexpected content type", { uri: uri, error: err });
+          done();
+        }
+        else {
+          var content = scrapeText(text);
+          if (content != null) {
+            var record = {
+              uri: uri,
+              content: content
+            };
+            app.info("scrape", { uri: uri, content: content });
+            outFile.write(JSON.format(content) + "\n");
+          }
+          done();
+        }
+      });
     });
   }
 
-  queue.process(work);
+  function startReaper() {
+    setInterval(function() {
+      queue.ifEmpty(function() {
+        outFile.close(function() {
+          app.exit(0);
+        });
+      });
+    }, 10000);
+  }
+
+  seedQueue(function() {
+    getToWork();
+    startReaper();
+  });
 });

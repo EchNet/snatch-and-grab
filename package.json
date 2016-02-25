@@ -18,7 +18,8 @@
     "winston": "*",
     "winston-daily-rotate-file": "*",
     "geolib": "*",
-    "aws-sdk": "*"
+    "aws-sdk": "*",
+    "line-reader": "*"
   },
   "devDependencies": {}
 }

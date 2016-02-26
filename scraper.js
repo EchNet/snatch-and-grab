@@ -26,14 +26,8 @@ app.open("scraperQueue", function(queue) {
         lineReader.eachLine(inFileName, function(line, last) {
           enqueue(line);
           if (last) {
-            return false;
+            done();
           }
-          return !last;
-        }).then(function(err) {
-          if (err) {
-            throw err;
-          }
-          done();
         });
       });
     }

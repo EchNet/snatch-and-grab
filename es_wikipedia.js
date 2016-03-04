@@ -6,5 +6,5 @@ module.exports = {
   host: "https://es.wikipedia.org",
   origin: "/wiki/Especial:Todas",
   crawlText: wikipedia.crawlTextFunction("Especial", "Todas", "Siguiente página"),
-  scrapeText: wikipedia.scrapeText
+  scrapeText: wikipedia.scrapeTextFunction("Categor%C3%ADa")
 };

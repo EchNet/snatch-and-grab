@@ -100,9 +100,9 @@ function seedWorkQueue(app, which) {
 
     service.queue = queue;
     service.wrapper = {
-      enqueue: function(uri, callback) {
-        winston.info("enqueue", uri);
-        queue.create("job", { uri: uri }).removeOnComplete(true).save(callback);
+      enqueue: function(data, callback) {
+        winston.info("enqueue", data);
+        queue.create("job", data).removeOnComplete(true).save(callback);
       },
       process: function(worker) {
         var concurrency = conf.concurrency || 1;

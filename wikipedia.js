@@ -93,7 +93,7 @@ function scrapeTextFunction(category) {
       }
 
       if (scrapage != null) {
-        if (match = /<h1 id="firstHeading" class="firstHeading" lang="en">([^<][^<]*)<\/h1>/.exec(text)) {
+        if (match = /<h1 id="firstHeading" class="[^"]*" lang="[^"]*">(..*)<\/h1>/.exec(text)) {
           scrapage.title = entities.decode(match[1]);
         }
 

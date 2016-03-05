@@ -20,14 +20,13 @@ app.open("scraperQueue", function(queue) {
     queue.enqueue({ uri: uri });
   }
 
-  function seedQueue(done) {
+  function seedQueue() {
     if (inFileName) {
       app.info("clearing queue...");
       queue.clear(function() {
         app.info("queue cleared");
         if (inFileName.length && inFileName.charAt(0) == "@") {
           enqueue(inFileName.substring(1));
-          done();
         }
         else {
           var lineCount = 0;
@@ -36,7 +35,6 @@ app.open("scraperQueue", function(queue) {
             ++lineCount;
             if (last) {
               app.info("enqueued: " + lineCount);
-              done();
             }
           });
         }
@@ -44,7 +42,7 @@ app.open("scraperQueue", function(queue) {
     }
     else {
       app.info("restarting queue");
-      queue.restartJobs(done);
+      queue.restartJobs();
     }
   }
 
@@ -100,8 +98,7 @@ app.open("scraperQueue", function(queue) {
     }, 10000);
   }
 
-  seedQueue(function() {
-    getToWork();
-    startReaper();
-  });
+  seedQueue();
+  getToWork();
+  startReaper();
 });

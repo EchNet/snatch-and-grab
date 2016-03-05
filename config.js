@@ -55,18 +55,6 @@ module.exports = function(params) {
         }
       }; })(),
 
-    crawlerQueue: (function() {
-      return {
-        prefix: "cq",
-        concurrency: 5,
-        redis: {
-          host: "localhost",
-          port: 6379,
-          db: 1
-        }
-      };
-    })(),
-
     scraperQueue: (function() {
       return {
         prefix: "sc",
@@ -74,41 +62,9 @@ module.exports = function(params) {
         redis: {
           host: "localhost",
           port: 6379,
-          db: 2
+          db: 1
         }
       };
-    })(),
-
-    checklist: (function() {
-      return {
-        redis: {
-          host: "localhost",
-          port: 6379,
-          db: 3
-        }
-      };
-    })(),
-
-    database: (function() {
-      return extend(true, {}, {
-        mongo: {
-          collection: site
-        }
-      }, (env == "dev") ? {
-        mongo: {
-          host: "localhost",
-          port: 27017,
-          database: "local"
-        }
-      } : {
-        mongo: {
-          host: "c462.candidate.62.mongolayer.com",
-          port: 10462,
-          database: "whwh",
-          user: getEnv("MONGO_USER"),
-          password: getEnv("MONGO_PASSWORD")
-        }
-      });
     })(),
 
     elasticsearch: (function() {

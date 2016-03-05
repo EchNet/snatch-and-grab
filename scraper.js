@@ -20,29 +20,33 @@ app.open("scraperQueue", function(queue) {
     queue.enqueue({ uri: uri });
   }
 
-  function seedQueue() {
+  function initQueue(done) {
     if (inFileName) {
       app.info("clearing queue...");
       queue.clear(function() {
         app.info("queue cleared");
-        if (inFileName.length && inFileName.charAt(0) == "@") {
-          enqueue(inFileName.substring(1));
-        }
-        else {
-          var lineCount = 0;
-          lineReader.eachLine(inFileName, function(line, last) {
-            enqueue(line);
-            ++lineCount;
-            if (last) {
-              app.info("enqueued: " + lineCount);
-            }
-          });
-        }
+        done();
       });
     }
     else {
       app.info("restarting queue");
-      queue.restartJobs();
+      queue.restartJobs(done);
+    }
+  }
+
+  function feedQueue() {
+    if (inFileName.length && inFileName.charAt(0) == "@") {
+      enqueue(inFileName.substring(1));
+    }
+    else {
+      var lineCount = 0;
+      lineReader.eachLine(inFileName, function(line, last) {
+        enqueue(line);
+        ++lineCount;
+        if (last) {
+          app.info("enqueued: " + lineCount);
+        }
+      });
     }
   }
 
@@ -98,7 +102,9 @@ app.open("scraperQueue", function(queue) {
     }, 10000);
   }
 
-  seedQueue();
-  getToWork();
-  startReaper();
+  initQueue(function() {
+    getToWork();
+    feedQueue();
+    startReaper();
+  });
 });

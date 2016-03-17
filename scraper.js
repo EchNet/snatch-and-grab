@@ -2,109 +2,119 @@
 
 var fs = require("fs");
 var request = require("request");
-var lineReader = require("line-reader");
 
 var PipelineApp = require("./app").PipelineApp;
 var app = new PipelineApp("scraper");
-
-var timeout = app.config.request.timeout;
-var scrapeText = app.config.site.scrapeText;
 
 var inFileName = app.args["in"];
 var outFileName = app.args.out || ("data/" + app.params.site + ".data");
 var outFile = fs.createWriteStream(outFileName, { flags: "w+" });
 
-app.open("scraperQueue", function(queue) {
+var workerCount = 0;
+var fd;
+var leftover = "";
+var bufferSize = 1024;
+var buffer = new Buffer(bufferSize);
 
-  function enqueue(uri) {
-    queue.enqueue({ uri: uri });
+function getNextUri() {
+  var eol, uri, cc;
+  for (;;) {
+    eol = leftover.indexOf("\n");
+    if (eol >= 0) {
+      uri = leftover.substring(0, eol);
+      leftover = leftover.substring(eol + 1);
+      break;
+    }
+    cc = fs.readSync(fd, buffer, 0, bufferSize, null);
+    if (cc <= 0) {
+      if (leftover.length) {
+        uri = leftover;
+        leftover = "";
+      }
+      break;
+    }
+    leftover += buffer.toString("ascii", 0, cc);
   }
+  return uri;
+}
 
-  function initQueue(done) {
-    if (inFileName) {
-      app.info("clearing queue...");
-      queue.clear(function() {
-        app.info("queue cleared");
-        done();
-      });
+function doScrapeOne(uri, done, onError) {
+  var host = app.config.site.host;
+  var url = host + uri;
+  request({
+    url: url,
+    timeout: app.config.request.timeout,
+    followRedirect: false
+  }, function(err, response, text) {
+    if (err) {
+      onError(url, err);
+    }
+    else if (response.statusCode != 200) {
+      app.warn("bad status code", { url: url, statusCode: response.statusCode });
+      done();
+    }
+    else if (!/^text/.exec(response.headers["content-type"])) {
+      app.warn("unexpected content type", { url: url, error: err });
+      done();
     }
     else {
-      app.info("restarting queue");
-      queue.restartJobs(done);
-    }
-  }
-
-  function feedQueue() {
-    if (inFileName.length && inFileName.charAt(0) == "@") {
-      enqueue(inFileName.substring(1));
-    }
-    else {
-      var lineCount = 0;
-      lineReader.eachLine(inFileName, function(line, last) {
-        enqueue(line);
-        ++lineCount;
-        if (last) {
-          app.info("enqueued: " + lineCount);
-        }
-      });
-    }
-  }
-
-  function scrapeOne(uri, done) {
-    var host = app.config.site.host;
-    var url = host + uri;
-    request({
-      url: url,
-      timeout: timeout,
-      followRedirect: false
-    }, function(err, response, text) {
-      if (err) {
-        app.error("request error", { url: url, error: err });
-        enqueue(uri);  // requeue
-        done();
+      var content = app.config.site.scrapeText(text);
+      if (content != null) {
+        var record = {
+          uri: uri,
+          content: content
+        };
+        app.info("scrape", record);
+        outFile.write(JSON.stringify(record) + "\n");
       }
-      else if (response.statusCode != 200) {
-        app.warn("bad status code", { url: url, statusCode: response.statusCode });
-        done();
-      }
-      else if (!/^text/.exec(response.headers["content-type"])) {
-        app.warn("unexpected content type", { url: url, error: err });
-        done();
+      done();
+    }
+  });
+}
+
+function scrapeOne(uri, done) {
+  var tries = 0;
+  (function tryIt() {
+    ++tries;
+    doScrapeOne(uri, done, function(url, err) {
+      if (tries > app.config.request.retries) {
+        app.abort("request error", { url: url, error: err });
       }
       else {
-        var content = scrapeText(text);
-        if (content != null) {
-          var record = {
-            uri: uri,
-            content: content
-          };
-          app.info("scrape", record);
-          outFile.write(JSON.stringify(record) + "\n");
-        }
-        done();
+        setTimeout(tryIt, app.config.request.timeout);
       }
     });
-  }
+  })();
+}
 
-  function getToWork() {
-    queue.process(function(job, done) {
-      scrapeOne(job.data.uri, done);
-    });
-  }
+function exit() {
+  app.exit(0);
+}
 
-  function startReaper() {
-    setInterval(function() {
-      queue.ifEmpty(function() {
-        outFile.close(function() {
-          app.exit(0);
-        });
-      });
-    }, 10000);
-  }
+function work() {
+  ++workerCount;
+  (function next() {
+    var uri = getNextUri();
+    if (!uri) {
+      if (--workerCount == 0) {
+        exit();
+      }
+    }
+    else {
+      scrapeOne(uri, next);
+    }
+  })();
+}
 
-  initQueue(function() {
-    getToWork();
-    feedQueue();
-    startReaper();
-  });
-});
+if (!inFileName) {
+  app.abort("no input file name?");
+}
+else if (inFileName.length && inFileName.charAt(0) == "@") {
+  scrapeOne(inFileName.substring(1), exit);
+}
+else {
+  fd = fs.openSync(inFileName, "r");
+  for (var i = 0; i < app.config.scraperQueue.concurrency; ++i) {
+    setTimeout(work, 1);
+  }
+}

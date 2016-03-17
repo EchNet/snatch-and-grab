@@ -160,60 +160,6 @@ function seedWorkQueue(app, which) {
 }
 
 //
-// Redis checklist connector.
-//
-function seedChecklist(app) { 
-
-  function openChecklist(service, callback) {
-    winston.info("Initializing checklist...");
-    var redis = require("redis");
-    var redisConfig = app.config.checklist.redis;
-    var redisClient = redis.createClient({
-      host: redisConfig.host,
-      port: redisConfig.port
-    });
-    redisClient.select(redisConfig.db, function(err) {
-      if (err) {
-        app.abort("redis select", err);
-      }
-      else {
-        var wrapper = {
-          check: function(uri, callback) {
-            redisClient.get(uri, function(err, reply) {
-              if (!reply) {
-                redisClient.set(uri, "X", callback);
-              }
-            });
-          }
-        };
-        service.redisClient = redisClient;
-        service.wrapper = wrapper;
-        callback(wrapper);
-      }
-    });
-  }
-
-  var seed = {
-    open: function(callback) {
-      if (seed.wrapper) {
-        callback(seed.wrapper);
-      }
-      else {
-        openChecklist(seed, callback);
-      }
-    },
-    close: function(callback) {
-      if (seed.redisClient) {
-        seed.redisClient.quit();
-        seed.redisClient = null;
-      }
-      callback();
-    }
-  };
-  return seed;
-}
-
-//
 // ElasticSearch connector.
 //
 function seedElasticSearch(app) { 

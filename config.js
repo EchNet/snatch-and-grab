@@ -25,9 +25,6 @@ module.exports = function(params) {
 
   var second = 1000;
   var minute = second * 60;
-  var hour = minute * 60;
-  var day = hour * 24;
-  var week = day * 7;
 
   return {
     params: params,
@@ -42,30 +39,18 @@ module.exports = function(params) {
       };
     })(),
 
-    web: (function() {
-      return {
-        port: 3300
-      }
-    })(),
+    web: {
+      port: 3300
+    },
 
-    request: (function() {
-      return {
-        request: {
-          timeout: 5000
-        }
-      }; })(),
+    request: {
+      timeout: env == "prod" ? 5000 : 1000,
+      retries: env == "prod" ? 10 : 3
+    },
 
-    scraperQueue: (function() {
-      return {
-        prefix: "sc",
-        concurrency: env == "dev" ? 3 : 10,
-        redis: {
-          host: "localhost",
-          port: 6379,
-          db: 1
-        }
-      };
-    })(),
+    scraperQueue: {
+      concurrency: env == "dev" ? 3 : 10
+    },
 
     elasticsearch: (function() {
       function formProdEsUrl(host) {
@@ -88,14 +73,6 @@ module.exports = function(params) {
           formProdEsUrl("aws-us-east-1-portal10.dblayer.com:10236")
         ]
       });
-    })(),
-
-    control: (function() {
-      return {
-        quantum: second * 20,
-        scrapeFreshnessTime: env == "dev" ? day : week,
-        initialScrapesPerQuantum: 200
-      };
     })()
   };
 }

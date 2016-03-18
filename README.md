@@ -52,49 +52,43 @@ All commands log their output to the logs folder.
 Creates a list of all target URIs on the site and writes it to the specified output
 file (default=data/crawler.out), one entry per line.
 
-### Indexer ###
+### Scraper ###
 
-  node indexer --env=dev --dest=url --site=lang\_wikipedia
+  node scraper --env=dev --in=inputFile --out=outputFile --site=lang\_wikipedia
 
 ## V1 TODO ##
 
-Crawler
+Operations
+- Implement a git pull strategy?
+- Save AMIs
+- Save HTTP access logs
+- What level of monitoring/alerting is necessary?
 
-- Set up periodic maintenance of crawl machine: log export, git pull
-- Save AMI of crawl machine
-
-Indexer
-
-- Add categorization: city, monument, radio station, incident
-- Drive scraper by URI list downloaded from S3
-- Make MongoDB database output optional - write to file instead 
-- Condense the scraper and the indexer phases into one, bulking scrapes as well as index upserts.
-- Create indexer AMI
-- Run indexer on a schedule.
-- Add indexer support for additional languages
-- Indexer updates system configuration with the new index on completion.
-
-Query
-
-- Query pulls index mappings from dynamic system state
-- Add query support for additional languages
-- Filter query by category (point of interest, region, other)
-
-Server
-- Serve assets directly through nginx
-- Set up periodic maintenance of server machine: log export 
+Web Site
+- Choose a website hosting service
+- Register a better domain name!
+- Implement an asset deployment scheme - proxy assets from S3?
 - Deploy HTTPS
+
+Non-english Wikipedias
+- Add indexer support for additional languages
+- Add query support for additional languages
+
+Indexing
+- Add the indexing phase to the scraper script.
+- Upsert index, don't destroy and recreate.
+
+Categorization
+- Add categorization: city, monument, radio station, incident
+- Drop some categories from the index.
+- Filter query by category (point of interest, region, other)
 
 Client
 - Google Map integration
-- UI supports a language setting.
+- UI supports a which-wikipedia setting.
 - Add enablement instructions.
 - Test on IE
 - UI beautification
-
-Operations
-- System monitoring
-- Log aggregation
 
 ## V2 ##
 
@@ -107,4 +101,4 @@ iOS app
 - BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
 - BUG: final "exiting" message is not output by winston!
 - BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
-- BUG: at lat 42 lon 30 there's https://en.wikipedia.org/wiki/MV_Mefk%C3%BCre which has no title, also one at 42,18
+- Add categorization: city, monument, radio station, incident

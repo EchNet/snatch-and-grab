@@ -13,4 +13,5 @@ date
 node crawler --site=$SITE --out=data/$SITE.list || exit 1
 date
 s3cmd mv s3://whwh/lists/$SITE.list s3://whwh/lists/$SITE.list.`date +%F`
-s3cmd put data/$SITE.list s3://whwh/lists/$SITE.list
+s3cmd put data/$SITE.list s3://whwh/lists/$SITE.list || exit 1
+$DIR/pushlogs.sh

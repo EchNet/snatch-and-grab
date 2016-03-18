@@ -15,4 +15,5 @@ npm install || exit 1
 s3cmd get --force s3://whwh/lists/$SITE.list data/$SITE.list || exit 1
 node scraper --site=$SITE --in=data/$SITE.list --out=data/$SITE.data || exit 1
 s3cmd mv s3://whwh/data/$SITE.data s3://whwh/data/$SITE.data.`date +%F`
-s3cmd put data/$SITE.data s3://whwh/data/$SITE.data
+s3cmd put data/$SITE.data s3://whwh/data/$SITE.data || exit 1
+$DIR/pushlogs.sh

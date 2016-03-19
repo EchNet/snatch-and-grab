@@ -5,20 +5,25 @@
   },
   "version": "0.1.0",
   "dependencies": {
-    "kue": "~0.10.4",
-    "redis": "*",
-    "mongodb": "*",
+    "aws-sdk": "*",
+    "chai": "^3.5.0",
     "elasticsearch": "*",
-    "xmldom": "*",
-    "yargs": "*",
-    "extend": "*",
-    "request": "*",
-    "html-entities": "*",
     "express": "*",
+    "extend": "*",
+    "geolib": "*",
+    "html-entities": "*",
+    "kue": "~0.10.4",
+    "mocha": "^2.4.5",
+    "mongodb": "*",
+    "redis": "*",
+    "request": "*",
     "winston": "*",
     "winston-daily-rotate-file": "*",
-    "geolib": "*",
-    "aws-sdk": "*"
+    "xmldom": "*",
+    "yargs": "*"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "scripts": {
+    "test": "./node_modules/.bin/mocha test/geoformat.js"
+  }
 }

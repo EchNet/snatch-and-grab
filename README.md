@@ -97,8 +97,6 @@ iOS app
 
 ## BUGS ##
 
-- Add a unit testing framework for bug fixing!
-- BUG: Clean up geo scrape - ignore non-numbers.  Parse -.5
 - BUG: final "exiting" message is not output by winston!
 - BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
 - Add categorization: city, monument, radio station, incident

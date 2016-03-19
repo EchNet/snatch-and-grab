@@ -1,7 +1,6 @@
 // wikipedia.js
 
 var geoformat = require("./geoformat");
-var extend = require("extend");
 var AllHtmlEntities = require("html-entities").AllHtmlEntities;
 
 function looksLikeArticlePage(text) {
@@ -49,52 +48,56 @@ function crawlTextFunction(special, allPages, next) {
 
 function scrapeTextFunction(category) {
 
+  function addGeoProp(scrapage, propName, propValue) {
+    if (typeof propValue == "number") {
+      scrapage = scrapage || {};
+      scrapage.geo = scrapage.geo || {}
+      scrapage.geo[propName] = propValue;
+    }
+    return scrapage;
+  }
+
+  function addLatitude(scrapage, propValue) {
+    return addGeoProp(scrapage, "latitude", propValue);
+  }
+
+  function addLongitude(scrapage, propValue) {
+    return addGeoProp(scrapage, "longitude", propValue);
+  }
+
+  function addGeo(scrapage, geo) {
+    if (geo) {
+      scrapage = addLatitude(scrapage, geo.latitude);
+      scrapage = addLongitude(scrapage, geo.longitude);
+    }
+    return scrapage;
+  }
+
   return function(text) {
     var scrapage = null;
     if (looksLikeArticlePage(text)) {
-      var geo;
       var match;
       var entities = new AllHtmlEntities();
 
-      if (match = /<span class="latitude">([0-9][^<]*)</.exec(text)) {
-        scrapage = extend(true, scrapage || {}, {
-          geo: {
-            latitude: geoformat.parseValue(match[1])
-          }, 
-          geo0: {
-            latitude_text: match[1]
-          }
-        });
+      if (match = /<span class="latitude">([^<]*)</.exec(text)) {
+        scrapage = addLatitude(scrapage, geoformat.parseValue(match[1]));
       }
 
-      if (match = /<span class="longitude">([0-9][^<]*)</.exec(text)) {
-        scrapage = extend(true, scrapage || {}, {
-          geo: {
-            longitude: geoformat.parseValue(match[1])
-          }, 
-          geo0: {
-            longitude_text: match[1]
-          }
-        });
+      if (match = /<span class="longitude">([^<]*)</.exec(text)) {
+        scrapage = addLongitude(scrapage, geoformat.parseValue(match[1]));
       }
 
-      if (match = /<span class="geo-dec"[^>]*>([-0-9][^<]*)</.exec(text)) {
-        geo = geoformat.parseLatLong(match[1]);
-        if (geo) {
-          scrapage = extend(true, scrapage || {}, { geo: geo, geo1: { text: match[1] } });
-        }
+      if (match = /<span class="geo-dec"[^>]*>([^<]*)</.exec(text)) {
+        scrapage = addGeo(scrapage, geoformat.parseLatLong(match[1]));
       }
 
-      if (match = /<span class="geo"[^>]*>([-0-9][^<]*)</.exec(text)) {
-        geo = geoformat.parseLatLong(match[1]);
-        if (geo) {
-          scrapage = extend(true, scrapage || {}, { geo: geo, geo2: { text: match[1] } });
-        }
+      if (match = /<span class="geo"[^>]*>([^<]*)</.exec(text)) {
+        scrapage = addGeo(scrapage, geoformat.parseLatLong(match[1]));
       }
 
       if (scrapage != null) {
         if (match = /<h1 id="firstHeading" class="[^"]*" lang="[^"]*">(..*)<\/h1>/.exec(text)) {
-          scrapage.title = entities.decode(match[1]);
+          scrapage.title = match[1];//entities.decode(match[1]);
         }
 
         scrapage.categories = [];

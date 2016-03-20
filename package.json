@@ -1,8 +1,9 @@
 {
-  "name": "crawler",
+  "name": "whwh",
   "author": {
     "name": "James Echmalian"
   },
+  "private": true,
   "version": "0.1.0",
   "dependencies": {
     "aws-sdk": "*",
@@ -14,7 +15,6 @@
     "html-entities": "*",
     "kue": "~0.10.4",
     "mocha": "^2.4.5",
-    "mongodb": "*",
     "redis": "*",
     "request": "*",
     "winston": "*",

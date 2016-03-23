@@ -289,9 +289,11 @@ function exit(app, status) {
 
 function abort(app, msg, error) {
   if (error) {
+    console.error(msg);
     winston.error(msg, { error: error });
   }
   else {
+    console.error(msg, error);
     winston.warn(msg);
   }
   exit(app, 1);

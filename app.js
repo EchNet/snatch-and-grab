@@ -272,7 +272,7 @@ function closeAllServices(app, done) {
   for (var key in app.services) {
     sequence.push(function(done) { app.services[key].close(done); });
   }
-  executeSequence(sequence, done);
+  executeSequence(sequence, function(){ setTimeout(done, 1000); });
 }
 
 //
@@ -288,7 +288,12 @@ function exit(app, status) {
 }
 
 function abort(app, msg, error) {
-  winston.error(msg, error ? { error: error } : undefined);
+  if (error) {
+    winston.error(msg, { error: error });
+  }
+  else {
+    winston.warn(msg);
+  }
   exit(app, 1);
 }
 

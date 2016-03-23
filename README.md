@@ -97,6 +97,4 @@ iOS app
 
 ## BUGS ##
 
-- BUG: final "exiting" message is not output by winston!
 - BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
-- Add categorization: city, monument, radio station, incident

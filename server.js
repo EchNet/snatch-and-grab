@@ -60,7 +60,7 @@ server.get("/whwh", function (req, res) {
 
   app.open([ "system", "elasticsearch" ], function(system, elasticsearch) {
 
-    var index = params.index || system.sites[params.site].index;
+    var index = params.index || system.sites[site].index;
 
     var location = [ params.longitude, params.latitude ];
 

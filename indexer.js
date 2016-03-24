@@ -68,19 +68,20 @@ app.open([ "elasticsearch" ], function(elasticsearch) {
   function loadIndex(callback) {
     var indexCount = 0;
     var buffer = [];
-
-    function flush(callback) {
-      elasticsearch.bulkInsert(indexName, "page", buffer, function() {
-        app.info("Indexed items", { indexCount: indexCount });
-        buffer = [];
-        callback && callback();
-      });
-    }
-
     var rd = readline.createInterface({
       input: fs.createReadStream(inFileName),
       terminal: false
     });
+
+    function flush(callback) {
+      rd.pause();
+      elasticsearch.bulkInsert(indexName, "page", buffer, function() {
+        app.info("Indexed items", { indexCount: indexCount });
+        buffer = [];
+        rd.resume();
+        callback && callback();
+      });
+    }
 
     rd.on("close", function() {
       app.info("input stream closed");

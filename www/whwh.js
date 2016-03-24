@@ -18,10 +18,18 @@
   }
 
   function queryLocation(geoloc) {
+    var data = { lat: geoloc[1], long: geoloc[0] };
+    var hash = g.location.hash;
+    if (hash) {
+      hash = hash.substring(1);
+      if (hash && hash.length) {
+        data.hash = hash;
+      }
+    }
     return $.ajax({
       method: "GET",
       url: "/whwh",
-      data: { lat: geoloc[1], long: geoloc[0] },
+      data: data,
       dataType: "json"
     });
   }

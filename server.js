@@ -26,19 +26,22 @@ server.get("/whwh", function (req, res) {
     res.json({ status: "error", msg: errmsg });
   }
 
-  var latitude = parseFloat(req.query.lat);
-  var longitude = parseFloat(req.query.long);
-  var lang = req.query.lang || "en";
+  var params = {
+    latitude: parseFloat(req.query.lat),
+    longitude: parseFloat(req.query.long),
+    lang: req.query.lang || "en",
+    index: req.query.hash
+  };
 
-  if (isNaN(latitude)) {
+  if (isNaN(params.latitude)) {
     return error("latitude must be a number");
   }
-  if (isNaN(longitude)) {
+  if (isNaN(params.longitude)) {
     return error("longitude must be a number");
   }
 
   // just Wikipedia for now
-  var site = lang + "_wikipedia";
+  var site = params.lang + "_wikipedia";
   var siteInfo = require("./" + site);
 
   function postProcessHits(hits) {
@@ -49,7 +52,7 @@ server.get("/whwh", function (req, res) {
         url: siteInfo.host + hit._source.uri,
         title: hit._source.title,
         loc: hit._source.location,
-        d: geolib.getDistance({ latitude: latitude, longitude: longitude },
+        d: geolib.getDistance({ latitude: params.latitude, longitude: params.longitude },
           { latitude: hit._source.location[1], longitude: hit._source.location[0] })
       };
     });
@@ -57,9 +60,9 @@ server.get("/whwh", function (req, res) {
 
   app.open([ "system", "elasticsearch" ], function(system, elasticsearch) {
 
-    var index = system.sites[site].index;
+    var index = params.index || system.sites[params.site].index;
 
-    var location = [ longitude, latitude ];
+    var location = [ params.longitude, params.latitude ];
 
     app.info("search query", { index: index, location: location });
 

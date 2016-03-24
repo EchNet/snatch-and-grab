@@ -7,23 +7,14 @@ Version 1.0 crawls only Wikipedia sites!  Supported languages:
 - English (en.wikipedia.com)
 - Italian (it.wikipedia.com)
 - German (de.wikipedia.com)
-- Spanish (en.wikipedia.com)
-- French (fr.wikipedia.com)
-- Portuguese (pt.wikipedia.com)
 
 ## Base Software ##
 
-Platform: NodeJS 5.2.0 and NPM
+NodeJS 5.2.0 and NPM
 
 ElasticSearch 2.1.1
 
 Amazon Web Services
-
-Redis (for queueing)  [http://redis.io/download](http://redis.io/download)
- - tested using version 2.6  
- - latest is 3.0
-
-Nginx
 
 ## Architecture ##
 
@@ -56,10 +47,13 @@ file (default=data/crawler.out), one entry per line.
 
   node scraper --env=dev --in=inputFile --out=outputFile --site=lang\_wikipedia
 
+### Indexer ###
+
+  node indexer --env=dev --in=inputFile --site=lang\_wikipedia
+
 ## V1 TODO ##
 
 Operations
-- Implement a git pull strategy?
 - Save AMIs
 - Save HTTP access logs
 - What level of monitoring/alerting is necessary?
@@ -71,12 +65,7 @@ Web Site
 - Deploy HTTPS
 
 Non-english Wikipedias
-- Add indexer support for additional languages
 - Add query support for additional languages
-
-Indexing
-- Add the indexing phase to the scraper script.
-- Upsert index, don't destroy and recreate.
 
 Categorization
 - Add categorization: city, monument, radio station, incident
@@ -90,11 +79,17 @@ Client
 - Test on IE
 - UI beautification
 
+## BUGS ##
+
+- BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
+
 ## V2 ##
 
 Android app
 iOS app
 
-## BUGS ##
+Additional languages:
 
-- BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
+- Spanish (en.wikipedia.com)
+- French (fr.wikipedia.com)
+- Portuguese (pt.wikipedia.com)

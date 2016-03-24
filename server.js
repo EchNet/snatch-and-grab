@@ -29,8 +29,7 @@ server.get("/whwh", function (req, res) {
   var params = {
     latitude: parseFloat(req.query.lat),
     longitude: parseFloat(req.query.long),
-    lang: req.query.lang || "en",
-    index: req.query.hash
+    lang: req.query.hash || req.query.lang || "en"
   };
 
   if (isNaN(params.latitude)) {

@@ -3,7 +3,7 @@
 var fs = require("fs");
 var readline = require("readline");
 
-var PipelineApp = require("./app").PipelineApp;
+var PipelineApp = require("../app").PipelineApp;
 var app = new PipelineApp("indexer");
 
 app.open([ "elasticsearch" ], function(elasticsearch) {

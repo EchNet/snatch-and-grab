@@ -1,5 +1,5 @@
 var expect = require("chai").expect;
-var geoformat = require("../geoformat");
+var geoformat = require("../pipeline/geoformat");
 
 describe("Geo Parser", function() {
   describe("Single value parser", function() {

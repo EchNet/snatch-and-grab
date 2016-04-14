@@ -18,7 +18,8 @@ Amazon Web Services
 
 ## Architecture ##
 
-There is an active indexing pipeline for each supported language.
+There is an active indexing pipeline for each supported language.  Pipeline code is
+found in the `pipeline` folder.
 
 ### Crawler
 

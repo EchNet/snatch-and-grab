@@ -29,7 +29,7 @@ module.exports = function(params) {
   return {
     params: params,
 
-    site: site && require("./" + site + ".js"),
+    site: site && require("./pipeline/" + site + ".js"),
 
     system: (function() {
       return {

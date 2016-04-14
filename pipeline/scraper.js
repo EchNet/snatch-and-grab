@@ -3,7 +3,7 @@
 var fs = require("fs");
 var request = require("request");
 
-var PipelineApp = require("./app").PipelineApp;
+var PipelineApp = require("../app").PipelineApp;
 var app = new PipelineApp("scraper");
 
 var inFileName = app.args["in"];

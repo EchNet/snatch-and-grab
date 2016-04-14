@@ -10,7 +10,7 @@ SITE=${1:-phony_site}
 cd $DIR/.. || exit 1
 npm install || exit 1
 date
-node crawler --site=$SITE --out=data/$SITE.list || exit 1
+node pipeline/crawler --site=$SITE --out=data/$SITE.list || exit 1
 date
 s3cmd mv s3://whwh/lists/$SITE.list s3://whwh/lists/$SITE.list.`date +%F`
 s3cmd put data/$SITE.list s3://whwh/lists/$SITE.list || exit 1

@@ -42,7 +42,7 @@ server.get("/whwh", function (req, res) {
 
   // just Wikipedia for now
   var site = params.lang + "_wikipedia";
-  var siteInfo = require("./" + site);
+  var siteInfo = require("./pipeline/" + site);
 
   function postProcessHits(hits) {
     return hits.filter(function(hit) {

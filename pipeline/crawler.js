@@ -3,7 +3,7 @@
 var request = require("request");
 var fs = require("fs");
 
-var PipelineApp = require("./app").PipelineApp;
+var PipelineApp = require("../app").PipelineApp;
 
 var app = new PipelineApp("crawler");
 

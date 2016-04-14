@@ -3,60 +3,19 @@
 <title>WHAT HAVE WE HERE?</title>
 <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
 <script src="whwh.js"></script>
-<script type="text/javascript">
-
-$(function() {
-  
-  function showMessage(message, append) {
-    if (!append) {
-      $(".message").remove();
-    }
-    $("#ui").before($("<div>").attr("class", "message").text(message));
-  }
-
-  function initUi(data) {
-    if (data.status != "ok") {
-      showMessage("Sorry, there was a problem looking up what's here.", 1); 
-    }
-    else if (data.results && data.results.length) {
-      whwh.renderTieredResults(data.results, $("#ui"));
-    }
-    else {
-      showMessage("Sorry, there doesn't seem to be anything interesting nearby.");
-    }
-  }
-
-  var responded = false;
-  if (whwh.getLocation(function(err, geoloc) {
-    responded = true;
-    if (err) {
-      showMessage("Sorry, there was some problem finding your location.");
-    }
-    else {
-      showMessage("You are at " + whwh.printLocation(geoloc));
-      whwh.queryLocation(geoloc)
-        .done(initUi)
-        .fail(function(hdr, error) {
-          showMessage("Sorry, there was a problem reaching the What Have We Here? server", 1); 
-        });
-    }
-  })) {
-    if (!responded) showMessage("Finding your location...");
-  }
-  else {
-    showMessage("Sorry, geolocation is not available in this browser");
-  }
-});
-</script>
 <style>
 body {
   font-family: Arial, Helvetica;
 }
-div {
+#ui {
   margin: 8px 0px;
 }
 div.tier-results {
   margin-left: 8px;
+}
+#map {
+	width: 300px;
+	height: 200px;
 }
 span.h1 {
   color: #808;
@@ -72,7 +31,73 @@ span.tier-heading {
 <body>
 <div><span class="h1">WHAT HAVE WE HERE?</span></div>
 <div class="message">Loading...</div>
-<div id="ui"></div>
-<div>If you'd prefer to enter a location manually, <a href="there.html">click here.</a></div>
+<div id="ui">
+<div id="map"></div>
+</div>
 </body>
 </html>
+<script type="text/javascript">
+function startApp() {
+  
+	function clearMessages() {
+		$(".message").remove();
+	}
+
+  function showMessage(message) {
+    $("#ui").append($("<div>")
+			.addClass("message")
+			.append($("<span>").text(message)));
+  }
+
+  function initUi(data) {
+    if (data.status != "ok") {
+			clearMessages();
+      showMessage("Sorry, there was a problem looking up what's here."); 
+    }
+    else if (data.results && data.results.length) {
+      whwh.renderTieredResults(data.results, $("#ui"));
+    }
+    else {
+			clearMessages();
+      showMessage("Sorry, there doesn't seem to be anything interesting nearby.");
+    }
+  }
+
+	clearMessages();
+  var responded = false;
+  if (whwh.getLocation(function(err, geoloc) {
+    responded = true;
+    if (err) {
+      showMessage("Sorry, there was some problem finding your location.");
+    }
+    else {
+      clearMessages();
+			var center = { lat: geoloc[1], lng: geoloc[0] };
+			var map = new google.maps.Map($("#map").get(0), {
+				backgroundColor: "blue",
+				center: center,
+				disableDefaultUI: true,
+				zoom: 15
+			});
+			new google.maps.Marker({
+				position: center,
+				map: map,
+				title: "You are here"
+			});
+			showMessage("Let's see what's nearby...");
+      whwh.queryLocation(geoloc)
+        .done(initUi)
+        .fail(function(hdr, error) {
+					clearMessages();
+          showMessage("Sorry, there was a problem reaching the What Have We Here? server", 1); 
+        });
+    }
+  })) {
+    if (!responded) showMessage("Finding your location...");
+  }
+  else {
+    showMessage("Sorry, geolocation is not available in this browser");
+  }
+}
+</script>
+<script async defer src="//maps.googleapis.com/maps/api/js?key=AIzaSyCNskkcIC_FvKZ9Xl-Dng5G7AAELo4QLek&callback=startApp"></script>

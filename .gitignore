@@ -1,6 +1,7 @@
 logs/
 data/
 node_modules/
+www/generated/
 npm-debug.log
 .DS_Store
 *.swp

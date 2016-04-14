@@ -11,7 +11,8 @@ var app = new App("server");
 var server = express();
 
 // Static assets.
-server.use(express.static("www"));
+server.use(express.static("www/static"));
+server.use(express.static("www/generated"));
 
 // Geo-search endpoint.
 server.get("/whwh", function (req, res) {

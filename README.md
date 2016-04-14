@@ -20,48 +20,55 @@ Amazon Web Services
 
 There is an active indexing pipeline for each supported language.
 
+### Crawler
+
 The Crawler runs daily.  Its role is to create an up-to-date list of all target pages
-(articles) on the site (wikipedia), which feeds the Indexer.
-
-The Indexer runs weekly.  Its role is to create a new ElasticSearch index containing only
-target pages that have geographical coordinates.  Once the new index is ready, it 
-becomes the new current index, which powers the Query API.
-
-The Query API is served by a NodeJS Express server, sitting behind an nginx and a load 
-balancer. 
-
-There's also a Web UI.
-
-## Commands ## 
-
-All commands log their output to the logs folder.
-
-### Crawler ###
+(articles) on the site (wikipedia), which feeds the Indexer.  It creates a list of all
+target URIs on the site and writes it to the specified output file
+(default=data/crawler.out), one entry per line.
 
   node crawler --env=dev --out=outFileName --site=lang\_wikipedia
 
-Creates a list of all target URIs on the site and writes it to the specified output
-file (default=data/crawler.out), one entry per line.
+### Scraper / Indexer
 
-### Scraper ###
+The Scraper and Indexer run weekly.  Their combined role is to create a new ElasticSearch
+index containing target pages that have geographical coordinates.  The Scraper reads 
+the list of target URIs put out by the Crawler, and puts out a file containing JSON entries,
+one per line, describing those pages that have geographical coordinates.  The Indexer
+reads the preceding file and loads the information into ElasticSearch.
+
+Once a new index is ready, it may become the new current index, which powers the Query API.
 
   node scraper --env=dev --in=inputFile --out=outputFile --site=lang\_wikipedia
 
-### Indexer ###
-
   node indexer --env=dev --in=inputFile --site=lang\_wikipedia
 
-## V1 TODO ##
+### Server
+
+The server serves a Web UI and the Query API.
+
+The server is a NodeJS Express server, sitting behind an nginx and a load balancer. 
+
+### Logging
+
+All commands log their output to the logs folder.  Logs roll over daily.
+
+## Development
+
+To run unit tests: `node_modules/mocha/bin/mocha`
+
+To start/stop ElasticSearch: `start_services.sh` and `stop_services.sh`
+
+### TODO 
 
 Operations
-- Save AMIs
+- Dockerize
 - Save HTTP access logs
 - What level of monitoring/alerting is necessary?
 
 Web Site
 - Choose a website hosting service
 - Register a better domain name!
-- Implement an asset deployment scheme - proxy assets from S3?
 - Deploy HTTPS
 
 Non-english Wikipedias
@@ -79,17 +86,19 @@ Client
 - Test on IE
 - UI beautification
 
-## BUGS ##
+### Known bugs 
 
 - BUG: exclude Tempe Terra! (on Mars) and Taurus-Littow (on the moon)
 
-## V2 ##
+### Wish list
 
 Android app
+
 iOS app
 
-Additional languages:
+Implement an asset deployment scheme - proxy assets from S3?
 
+Additional languages:
 - Spanish (en.wikipedia.com)
 - French (fr.wikipedia.com)
 - Portuguese (pt.wikipedia.com)
